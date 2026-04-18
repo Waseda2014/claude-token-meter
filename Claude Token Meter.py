@@ -503,6 +503,63 @@ html[data-vivid="on"] #es2 { background: #ECB967 !important; }
 html[data-vivid="on"] #es3 { background: #F09060 !important; }
 html[data-vivid="on"] #es4 { background: #FF654D !important; }
 
+/* ── Carbon + Light mode overrides ── */
+html[data-vivid="on"][data-theme="light"] {
+  --g1: #E2E5E9;
+  --g2: #E9ECEF;
+  --g3: #F0F2F5;
+  --card:   rgba(255,255,255,0.82);
+  --card-b: rgba(255,255,255,0.96);
+  --t1: rgba(10,14,22,0.95);
+  --t2: rgba(10,14,22,0.60);
+  --t3: rgba(10,14,22,0.42);
+  --div:  rgba(0,0,0,0.09);
+  --track: rgba(0,0,0,0.18);
+  --arc-fill: rgba(15,35,75,0.88);
+  --dot-fill: #1C2840;
+  --bar-today: rgba(185,115,15,0.88);
+  --bar-idle:  rgba(0,0,0,0.11);
+  --grad-start: #C03030;
+  --grad-mid:   #C88800;
+  --grad-end:   #3888CC;
+  --tick: rgba(10,14,22,1);
+  --pill: rgba(0,0,0,0.08);
+  --pill-act-bg: rgba(0,0,0,0.16);
+  --pill-act-border: rgba(0,0,0,0.30);
+  --pill-act-color: rgba(10,14,22,1.0);
+  --theme-active: rgba(0,0,0,0.15);
+}
+/* Carbon light — dot ring visible on light bg */
+html[data-vivid="on"][data-theme="light"] .carbon-ring-seg {
+  stroke: rgba(0,0,0,0.22) !important;
+}
+/* Carbon light — tooltip & panel backgrounds */
+html[data-vivid="on"][data-theme="light"] .eff-tooltip {
+  background: rgba(245,246,248,0.98);
+  border-color: rgba(0,0,0,0.12);
+}
+html[data-vivid="on"][data-theme="light"] .eff-tooltip::after {
+  border-top-color: rgba(245,246,248,0.98);
+}
+html[data-vivid="on"][data-theme="light"] .cookie-warn-tip {
+  background: rgba(245,246,248,0.98);
+  border-color: rgba(220,140,30,0.55);
+}
+html[data-vivid="on"][data-theme="light"] .cookie-warn-tip::before {
+  border-top-color: rgba(245,246,248,0.98);
+}
+html[data-vivid="on"][data-theme="light"] .info-panel {
+  background: rgba(245,246,248,0.98);
+  border-color: rgba(0,0,0,0.12);
+}
+/* Carbon light — session label contrast */
+html[data-vivid="on"][data-theme="light"] #gaugeSessionLbl { opacity: 0.55; }
+/* Carbon light — LOW arc + label: darken blue for contrast on light bg */
+html[data-vivid="on"][data-theme="light"] #arcLow { stroke: #3A90C8 !important; }
+html[data-vivid="on"][data-theme="light"] #arcLblLow { fill: #3A90C8 !important; }
+html[data-vivid="on"][data-theme="light"] #es0 { background: #3A90C8 !important; }
+html[data-vivid="on"][data-theme="light"] .eff-tooltip .tip-row:nth-child(1) .tip-dot { background: #3A90C8 !important; }
+
 /* Vivid dot button */
 .vivid-btn {
   width: 16px; height: 16px; border-radius: 50%;
@@ -802,13 +859,13 @@ html[data-theme="light"] .cookie-cancel:hover {
           fill="none" stroke="url(#gaugeGrad)" stroke-width="4" stroke-linecap="round"
           stroke-dasharray="0 445"
           style="transition: stroke-dasharray 0.8s cubic-bezier(0.34,1.05,0.64,1);"/>
-        <!-- Major ticks: 0%, 25%, 50%, 75%, 100% -->
+        <!-- Major ticks: 0%, 25%, 50%, 75%, 100% — same length as minor (r=82→85) -->
         <g stroke="var(--tick)" stroke-linecap="round" stroke-width="1.5" opacity="0.70">
-          <line x1="70.0"  y1="185.1" x2="74.9"  y2="180.2"/>
-          <line x1="51.5"  y1="92.5"  x2="57.9"  y2="95.2"/>
-          <line x1="130.0" y1="40.0"  x2="130.0" y2="47.0"/>
-          <line x1="208.5" y1="92.5"  x2="202.1" y2="95.2"/>
-          <line x1="190.1" y1="185.1" x2="185.2" y2="180.2"/>
+          <line x1="70.0"  y1="185.1" x2="72.0"  y2="183.0"/>
+          <line x1="51.5"  y1="92.5"  x2="54.2"  y2="93.6"/>
+          <line x1="130.0" y1="40.0"  x2="130.0" y2="43.0"/>
+          <line x1="208.5" y1="92.5"  x2="205.8" y2="93.6"/>
+          <line x1="190.1" y1="185.1" x2="188.0" y2="183.0"/>
         </g>
         <!-- Medium ticks -->
         <g stroke="var(--tick)" stroke-linecap="round" stroke-width="0.8" opacity="0.28">
@@ -831,6 +888,29 @@ html[data-theme="light"] .cookie-cancel:hover {
           <line x1="185.2" y1="60.4"  x2="183.3" y2="62.6"/>
           <line x1="214.7" y1="131.7" x2="211.7" y2="131.4"/>
           <line x1="202.5" y1="169.4" x2="199.9" y2="167.8"/>
+        </g>
+        <!-- Micro ticks every 2.5% (between existing ticks) -->
+        <g stroke="var(--tick)" stroke-linecap="round" stroke-width="0.6" opacity="0.18">
+          <line x1="63.3" y1="177.7" x2="64.5" y2="176.8"/>
+          <line x1="52.9" y1="160.7" x2="54.2" y2="160.1"/>
+          <line x1="46.6" y1="141.6" x2="48.1" y2="141.3"/>
+          <line x1="45.1" y1="121.7" x2="46.6" y2="121.7"/>
+          <line x1="48.2" y1="101.9" x2="49.7" y2="102.3"/>
+          <line x1="55.8" y1="83.6"  x2="57.1" y2="84.3"/>
+          <line x1="67.5" y1="67.4"  x2="68.6" y2="68.4"/>
+          <line x1="82.8" y1="54.3"  x2="83.7" y2="55.5"/>
+          <line x1="100.5" y1="45.3" x2="101.0" y2="46.7"/>
+          <line x1="120.0" y1="40.6" x2="120.2" y2="42.1"/>
+          <line x1="140.0" y1="40.6" x2="139.8" y2="42.1"/>
+          <line x1="159.5" y1="45.3" x2="159.0" y2="46.7"/>
+          <line x1="177.2" y1="54.3" x2="176.3" y2="55.5"/>
+          <line x1="192.5" y1="67.4" x2="191.4" y2="68.4"/>
+          <line x1="204.2" y1="83.6" x2="202.9" y2="84.3"/>
+          <line x1="211.8" y1="101.9" x2="210.3" y2="102.3"/>
+          <line x1="214.9" y1="121.7" x2="213.4" y2="121.7"/>
+          <line x1="213.4" y1="141.6" x2="211.9" y2="141.3"/>
+          <line x1="207.1" y1="160.7" x2="205.8" y2="160.1"/>
+          <line x1="196.7" y1="177.7" x2="195.5" y2="176.8"/>
         </g>
         <!-- Numeric labels -->
         <text x="59"  y="202" fill="var(--t3)" font-family="-apple-system,sans-serif" font-size="9" font-weight="500" text-anchor="middle">0</text>
@@ -858,11 +938,11 @@ html[data-theme="light"] .cookie-cancel:hover {
 
         <!-- Outer index ring r=102 (~7px gap from inner arc edge) -->
         <!-- Segment 1: SVG 142° → 260° (gap for LOW at start, gap for MEDIUM before) -->
-        <path d="M 49.6 187.8 A 102 102 0 0 1 112.3 24.5"
+        <path class="carbon-ring-seg" d="M 49.6 187.8 A 102 102 0 0 1 112.3 24.5"
           fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="1.2"
           stroke-linecap="round" stroke-dasharray="0.8 5.5"/>
         <!-- Segment 2: SVG 280° → 38° (gap for MEDIUM after, gap for HIGH at end) -->
-        <path d="M 147.7 24.5 A 102 102 0 0 1 210.4 187.8"
+        <path class="carbon-ring-seg" d="M 147.7 24.5 A 102 102 0 0 1 210.4 187.8"
           fill="none" stroke="rgba(255,255,255,0.20)" stroke-width="1.2"
           stroke-linecap="round" stroke-dasharray="0.8 5.5"/>
 
@@ -882,7 +962,7 @@ html[data-theme="light"] .cookie-cancel:hover {
 
         <!-- Zone labels in the outer ring gap, rotated along the arc -->
         <!-- LOW on outer ring (r=102) at SVG 135°, first letter at x≈58 -->
-        <text transform="rotate(-130, 58, 197)" x="58" y="197"
+        <text id="arcLblLow" transform="rotate(-130, 58, 197)" x="58" y="197"
           fill="#AAD7FE" opacity="0.90"
           font-family="-apple-system,sans-serif" font-size="6.5" font-weight="700"
           text-anchor="start" letter-spacing="1.0">LOW</text>
