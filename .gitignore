@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# py2app build artifacts
+build/
+dist/
+
+# Claude Code local settings
+.claude/
+
+# Old variant files
+Claude Token Meter 7-day.py
+Claude Token Meter — Gradient Gauge.py
+Claude Token Meter — Half-Gauge.py
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

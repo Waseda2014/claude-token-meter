@@ -6,6 +6,7 @@ from setuptools import setup
 
 APP     = ['Claude Token Meter.py']
 OPTIONS = {
+    'iconfile': 'icon.icns',
     'argv_emulation': False,   # must be False for PyObjC menu-bar apps
     'emulate_shell_environment': False,
     'semi_standalone': False,

@@ -49,8 +49,8 @@ WEEK_LIMIT       = 179_000_000   # Claude Pro weekly limit (calibrated)
 PT_OFFSET        = timedelta(hours=7)   # UTC-7 (PDT); use 8 in winter (PST)
 
 POPOVER_W  = 300
-POPOVER_H  = 665   # base: 605 + ~47 (collapsed 7-day header) + ~13 buffer
-POPOVER_H_COOKIE = 880  # WKWebView ceiling: 665 + 113 (7-day body) + 70 (cookie) + buffer
+POPOVER_H  = 653   # base: trimmed footer (-12px)
+POPOVER_H_COOKIE = 868  # WKWebView ceiling: 653 + 113 (7-day body) + 70 (cookie) + buffer
 
 # ─── HTML / CSS / JS ──────────────────────────────────────────────────────────
 
@@ -122,7 +122,7 @@ body {
 }
 
 #app {
-  width: 300px; height: 665px;
+  width: 300px; height: 653px;
   background: linear-gradient(175deg, var(--g1) 0%, var(--g2) 50%, var(--g3) 100%);
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -287,7 +287,7 @@ html[data-vivid="on"] .gauge-carbon  { display: block; }
 .eff-card { padding: 12px 14px 12px; }
 .eff-hdr {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 0;
+  margin-bottom: 0; cursor: pointer;
 }
 .eff-hdr-left { display: flex; align-items: center; gap: 5px; }
 .eff-hdr-left .stat-lbl { margin-bottom: 0; }
@@ -432,7 +432,7 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
 
 /* ── 7-Day Usage chart ──────────────────────────────────────────────────── */
 .week-card { padding: 12px 14px 12px; }
-.week-hdr  { display: flex; justify-content: space-between; align-items: center; }
+.week-hdr  { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 #weekChartBody {
   overflow: hidden; padding: 10px 0 0;
   transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
@@ -463,7 +463,7 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
 
 /* ── Footer ── */
 .footer {
-  padding: 6px 14px 28px;
+  padding: 6px 14px 16px;
   display: flex; flex-direction: column; gap: 7px;
   margin-top: 6px;
 }
@@ -474,6 +474,79 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
   text-transform: uppercase;
 }
 
+
+/* ── Expired cookie banner ── */
+.expired-banner {
+  display: none;
+  align-items: center; justify-content: space-between;
+  gap: 8px;
+  margin: 10px 14px 0;
+  padding: 9px 12px;
+  background: rgba(230, 140, 20, 0.15);
+  border: 1px solid rgba(230, 140, 20, 0.40);
+  border-radius: 10px;
+  font-size: 11px; color: rgba(255, 185, 80, 0.95);
+  letter-spacing: 0.1px; line-height: 1.3;
+  flex-shrink: 0;
+}
+html[data-expired="on"] .expired-banner { display: flex; }
+.expired-banner-text { flex: 1; }
+.expired-banner-text b { color: rgba(255, 200, 100, 1); font-weight: 600; }
+.expired-update-btn {
+  flex-shrink: 0;
+  background: rgba(230, 140, 20, 0.25);
+  border: 1px solid rgba(230, 140, 20, 0.50);
+  border-radius: 6px; padding: 4px 9px;
+  font-size: 10.5px; font-weight: 600;
+  color: rgba(255, 200, 80, 1);
+  cursor: pointer; -webkit-appearance: none;
+  transition: background 0.15s;
+}
+.expired-update-btn:hover { background: rgba(230, 140, 20, 0.40); }
+/* Stale gauge — desaturate arc + needle when expired */
+html[data-expired="on"] .arc-svg {
+  filter: saturate(0.12) brightness(0.75);
+  transition: filter 0.4s ease;
+}
+html[data-expired="on"] .arc-svg .gauge-carbon { filter: none; }
+/* Last synced label */
+#lastSynced {
+  display: none;
+  font-size: 10px; color: rgba(255,185,80,0.75);
+  text-align: center; letter-spacing: 0.2px;
+  margin-top: 2px;
+}
+html[data-expired="on"] #lastSynced { display: block; }
+
+/* ── Expired — amber input border (dark mode) ── */
+html[data-expired="on"] .cookie-form.open .cookie-input:not(.cookie-typed) {
+  border-color: rgba(230, 140, 20, 0.65);
+}
+
+/* ── Expired — light mode contrast overrides ── */
+html[data-expired="on"][data-theme="light"] .expired-banner {
+  background: rgba(200, 120, 0, 0.10);
+  border-color: rgba(180, 100, 0, 0.45);
+  color: rgba(130, 70, 0, 0.95);
+}
+html[data-expired="on"][data-theme="light"] .expired-banner-text b {
+  color: rgba(120, 60, 0, 1);
+}
+html[data-expired="on"][data-theme="light"] .expired-update-btn {
+  background: rgba(200, 120, 0, 0.18);
+  border-color: rgba(180, 100, 0, 0.45);
+  color: rgba(120, 60, 0, 1);
+}
+html[data-expired="on"][data-theme="light"] .expired-update-btn:hover {
+  background: rgba(200, 120, 0, 0.28);
+}
+html[data-expired="on"][data-theme="light"] #lastSynced {
+  color: rgba(140, 80, 0, 0.80);
+}
+/* Amber input border — light mode */
+html[data-expired="on"][data-theme="light"] .cookie-form.open .cookie-input:not(.cookie-typed) {
+  border-color: rgba(180, 100, 0, 0.60);
+}
 
 /* ── Carbon mode overrides ── */
 html[data-vivid="on"] {
@@ -754,11 +827,11 @@ html[data-theme="light"] .cookie-cancel:hover {
 /* Info icon */
 .info-icon-btn {
   font-family: inherit; font-size: 11px; line-height: 1;
-  color: var(--t3); background: none; border: none;
+  color: var(--t2); background: none; border: none;
   padding: 0 2px; cursor: pointer; transition: color 0.15s;
   -webkit-appearance: none; flex-shrink: 0;
 }
-.info-icon-btn:hover { color: var(--t2); }
+.info-icon-btn:hover { color: var(--t1); }
 
 /* Info panel overlay */
 .info-panel {
@@ -831,6 +904,12 @@ html[data-theme="light"] .cookie-cancel:hover {
 </head>
 <body>
 <div id="app">
+
+  <!-- Expired cookie banner — visible only when data-expired="on" -->
+  <div class="expired-banner" id="expiredBanner">
+    <span class="expired-banner-text"><b>Session expired</b> — data shown may be outdated</span>
+    <button class="expired-update-btn" id="expiredUpdateBtn">Update Key →</button>
+  </div>
 
   <div class="hdr">
     <span class="hdr-title">Claude Usage</span>
@@ -1007,6 +1086,7 @@ html[data-theme="light"] .cookie-cancel:hover {
         font-family="-apple-system,'SF Pro Text','Helvetica Neue',sans-serif"
         font-size="10.5" font-weight="400" text-anchor="middle">—</text>
     </svg>
+    <div id="lastSynced">⏱ Last synced <span id="lastSyncedTime">—</span></div>
   </div>
 
   <!-- Stats card -->
@@ -1031,7 +1111,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   <!-- Efficiency card -->
   <div class="card eff-card" id="effCard">
     <div class="shimmer-overlay" id="effShimmer"></div>
-    <div class="eff-hdr">
+    <div class="eff-hdr" id="effHdr">
       <div class="eff-hdr-left">
         <div class="stat-lbl">PROMPT EFFICIENCY</div>
         <button class="eff-info-btn" id="effInfoBtn" aria-label="How is this calculated?">
@@ -1094,7 +1174,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   <!-- 7-Day Usage card -->
   <div class="card week-card" id="weekChartCard">
     <div class="shimmer-overlay" id="weekChartShimmer"></div>
-    <div class="week-hdr">
+    <div class="week-hdr" id="weekHdr">
       <span class="stat-lbl">7 DAY USAGE</span>
       <button class="eff-toggle" id="weekChartToggle" title="Show / hide">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -1468,6 +1548,22 @@ function renderAll(d, animate) {
   const warn = document.getElementById('cookieWarn');
   if (warn) warn.style.display = d.cookie_expired ? 'inline' : 'none';
 
+  // Expired state — banner, stale gauge, last synced
+  const expired = !!d.cookie_expired;
+  document.documentElement.setAttribute('data-expired', expired ? 'on' : 'off');
+  const lastSyncedEl = document.getElementById('lastSyncedTime');
+  if (lastSyncedEl) lastSyncedEl.textContent = d.updated || '—';
+
+  // Auto-open cookie form when expired (only on first detection)
+  if (expired && !window._expiredFormOpened) {
+    window._expiredFormOpened = true;
+    setTimeout(() => {
+      const cookieToggleBtn = document.getElementById('cookieToggle');
+      if (cookieToggleBtn) cookieToggleBtn.click();
+    }, 600);
+  }
+  if (!expired) window._expiredFormOpened = false;
+
   renderEfficiency(d);
   if (d.daily_7) renderWeekChart(d.daily_7);
 }
@@ -1755,11 +1851,20 @@ document.getElementById('refreshNow').addEventListener('click', () => {
 
 
 // ── Shared height constants (used by cookie form + efficiency toggle) ──
-const H_BASE   = 665;   // base: eff open + 7-day collapsed
-const H_COOKIE = 735;   // H_BASE + 70 for cookie form
+const H_BASE   = 653;   // base: trimmed footer (-12px)
+const H_COOKIE = 723;   // H_BASE + 70 for cookie form
 
 // Ensure getAppH() always has a reliable baseline
 document.getElementById('app').style.height = H_BASE + 'px';
+
+// ── Expired banner → jumps to cookie form ──
+document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
+  const btn = document.getElementById('cookieToggle');
+  if (btn) {
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    btn.click();
+  }
+});
 
 // ── Cookie key UI ──
 (function() {
@@ -1774,7 +1879,8 @@ document.getElementById('app').style.height = H_BASE + 'px';
 
   function openForm() {
     form.classList.add('open');
-    toggle.classList.add('active');
+    toggle.classList.remove('active');   // button returns to resting state when form opens
+    input.classList.remove('cookie-typed');  // reset typed state so amber border shows
     app.style.height = H_COOKIE + 'px';
     window.webkit.messageHandlers.cm.postMessage({action:'resize', h: H_COOKIE});
     setTimeout(() => input.focus(), 240);
@@ -1783,10 +1889,14 @@ document.getElementById('app').style.height = H_BASE + 'px';
   function closeForm() {
     form.classList.remove('open');
     toggle.classList.remove('active');
+    input.classList.remove('cookie-typed');
     app.style.height = H_BASE + 'px';
     window.webkit.messageHandlers.cm.postMessage({action:'resize', h: H_BASE});
     input.value = ''; status.textContent = ''; status.className = 'cookie-status';
   }
+
+  // Amber border clears only once the user actually starts typing
+  input.addEventListener('input', () => input.classList.add('cookie-typed'));
 
   toggle.addEventListener('click', () => {
     form.classList.contains('open') ? closeForm() : openForm();
@@ -1864,6 +1974,7 @@ document.getElementById('app').style.height = H_BASE + 'px';
 (function() {
   const body   = document.getElementById('effBody');
   const toggle = document.getElementById('effToggle');
+  const hdr    = document.getElementById('effHdr');
   const app    = document.getElementById('app');
   if (!body || !toggle) return;
 
@@ -1886,7 +1997,7 @@ document.getElementById('app').style.height = H_BASE + 'px';
   if (!expanded) { body.style.paddingTop = '0'; }
   toggle.classList.toggle('open', expanded);
 
-  toggle.addEventListener('click', () => {
+  function doToggle() {
     expanded = !expanded;
     try { localStorage.setItem('effOpen', expanded ? '1' : '0'); } catch(e) {}
 
@@ -1903,13 +2014,24 @@ document.getElementById('app').style.height = H_BASE + 'px';
     const currentH = getAppH();
     const newH = expanded ? currentH + fullH : currentH - fullH;
     setTimeout(() => sendResize(newH), 10);
-  });
+  }
+
+  // Full header row is clickable; exclude the info button
+  if (hdr) {
+    hdr.addEventListener('click', (e) => {
+      if (e.target.closest('#effInfoBtn')) return;
+      doToggle();
+    });
+  } else {
+    toggle.addEventListener('click', doToggle);
+  }
 })();
 
 // ── 7-Day chart expand / collapse ──
 (function() {
   const body   = document.getElementById('weekChartBody');
   const toggle = document.getElementById('weekChartToggle');
+  const hdr    = document.getElementById('weekHdr');
   const app    = document.getElementById('app');
   if (!body || !toggle) return;
 
@@ -1941,7 +2063,7 @@ document.getElementById('app').style.height = H_BASE + 'px';
       window.webkit.messageHandlers.cm.postMessage({action:'resize', h: initH}), 0);
   }
 
-  toggle.addEventListener('click', () => {
+  function doToggle() {
     expanded = !expanded;
     window._weekExpanded = expanded;
     try { localStorage.setItem('weekChartOpen', expanded ? '1' : '0'); } catch(e) {}
@@ -1960,7 +2082,14 @@ document.getElementById('app').style.height = H_BASE + 'px';
 
     const newH = getAppH() + (expanded ? fullH : -fullH);
     setTimeout(() => sendResize(newH), 10);
-  });
+  }
+
+  // Full header row is clickable
+  if (hdr) {
+    hdr.addEventListener('click', doToggle);
+  } else {
+    toggle.addEventListener('click', doToggle);
+  }
 })();
 
 // ── Info panel ──
@@ -2173,7 +2302,7 @@ def get_usage():
                     if ts is None or ts >= month_start:
                         total_month += tokens
                         if ts:
-                            daily[ts.date()] += tokens
+                            daily[ts.astimezone().date()] += tokens
 
                     # Weekly (current billing week: Saturday–Saturday)
                     if ts and ts >= week_start:
@@ -2232,8 +2361,8 @@ def build_payload(settings):
 
     pct = min(100.0, total / limit * 100)
 
-    # ── 7-day chart: always Mon–Sun of the current week ──
-    _today     = now_utc.date()
+    # ── 7-day chart: always Mon–Sun of the current week (local timezone) ──
+    _today     = datetime.now().date()
     _monday    = _today - timedelta(days=_today.weekday())   # weekday(): Mon=0
     _DAY       = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     daily_7    = [
