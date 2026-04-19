@@ -356,6 +356,13 @@ def build_payload(settings: dict) -> dict:
         for i in range(7)
     ]
 
+    # Onboarding & empty-state signals
+    claude_installed = os.path.isdir(os.path.expanduser("~/.claude/projects"))
+    has_data         = total > 0 or bool(live)
+    if settings.get("simulate_empty"):
+        has_data = False
+    first_launch     = not settings.get("onboarding_done", False)
+
     return {
         "pct":                 round(pct, 1),
         "used":                total,
@@ -375,4 +382,7 @@ def build_payload(settings: dict) -> dict:
         "source":              data_source,
         "cookie_expired":      has_cookie and not live,
         "daily_7":             daily_7,
+        "first_launch":        first_launch,
+        "has_data":            has_data,
+        "claude_installed":    claude_installed,
     }

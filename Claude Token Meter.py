@@ -548,6 +548,170 @@ html[data-expired="on"][data-theme="light"] .cookie-form.open .cookie-input:not(
   border-color: rgba(180, 100, 0, 0.60);
 }
 
+/* ── Onboarding overlay ── */
+#app { position: relative; }
+.ob-overlay {
+  display: none;
+  position: absolute; inset: 0; z-index: 100;
+  background: linear-gradient(175deg, var(--g1) 0%, var(--g2) 50%, var(--g3) 100%);
+  border-radius: 14px;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 28px 28px 24px; gap: 0;
+}
+html[data-onboarding="on"] .ob-overlay { display: flex; }
+.ob-gauge {
+  margin-bottom: 18px; opacity: 0.92;
+}
+.ob-title {
+  font-size: 17px; font-weight: 300; letter-spacing: -0.3px;
+  color: var(--t1); text-align: center; margin-bottom: 5px;
+}
+.ob-sub {
+  font-size: 10.5px; color: var(--t2);
+  text-align: center; letter-spacing: 0.1px; line-height: 1.5;
+  margin-bottom: 20px; max-width: 200px;
+}
+.ob-feats {
+  display: flex; flex-direction: column; gap: 9px;
+  width: 100%; margin-bottom: 24px;
+}
+.ob-feat {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 10.5px; color: var(--t2); letter-spacing: 0.1px;
+}
+.ob-feat-dot {
+  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #52BAFF, #A87CF5);
+}
+html[data-theme="light"] .ob-feat-dot {
+  background: linear-gradient(135deg, #2A7FC0, #7B50C8);
+}
+.ob-cta {
+  width: 100%;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px; padding: 11px 0;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+  color: var(--t1); cursor: pointer; -webkit-appearance: none;
+  transition: background 0.15s, border-color 0.15s;
+  margin-bottom: 13px;
+}
+.ob-cta:hover {
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.28);
+}
+html[data-theme="light"] .ob-cta {
+  background: rgba(0,0,0,0.07);
+  border-color: rgba(0,0,0,0.18);
+}
+html[data-theme="light"] .ob-cta:hover {
+  background: rgba(0,0,0,0.12);
+}
+@keyframes ob-text-shimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+.ob-cta-text {
+  background: linear-gradient(90deg, #ffffff, #97D6FF, #CBB0F9, #F7A1B3, #ffffff);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ob-text-shimmer 3s linear infinite;
+}
+html[data-theme="light"] .ob-cta-text {
+  background: linear-gradient(90deg, #1A2A4A, #7FB2D9, #B096DE, #D983A0, #1A2A4A);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ob-text-shimmer 3s linear infinite;
+}
+.ob-note {
+  font-size: 9px; color: var(--t3); text-align: center;
+  letter-spacing: 0.2px;
+}
+@keyframes ob-arrow-nudge {
+  0%, 100% { transform: translateX(0px); }
+  50%       { transform: translateX(5px); }
+}
+.ob-arrow {
+  display: inline-block;
+  animation: ob-arrow-nudge 1.3s ease-in-out infinite;
+}
+/* Needle sweeps in from arc-start (135°) to resting (297°) = 162° rotation, with bounce */
+@keyframes ob-needle-in {
+  0%   { transform: rotate(-162deg); }
+  72%  { transform: rotate(9deg);    }
+  84%  { transform: rotate(-5deg);   }
+  92%  { transform: rotate(3deg);    }
+  100% { transform: rotate(0deg);    }
+}
+.ob-needle-g {
+  transform-box: view-box;
+  transform-origin: 50% 58.14%;   /* CX/viewW=130/260, CY/viewH=125/215 */
+  animation: ob-needle-in 1.1s ease-out 0.85s both;  /* delayed so arc draws first */
+}
+
+/* ── Onboarding: arc draw ── */
+@keyframes ob-arc-draw {
+  from { stroke-dasharray: 0 445; }
+  to   { stroke-dasharray: 267 445; }
+}
+#obArcFill {
+  animation: ob-arc-draw 0.85s ease-out 0.10s both;
+}
+
+/* ── Onboarding: staggered fade-up entrance ── */
+@keyframes ob-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.ob-gauge                             { animation: ob-fade-up 0.5s ease-out 0.05s both; }
+.ob-title                             { animation: ob-fade-up 0.5s ease-out 0.25s both; }
+.ob-sub                               { animation: ob-fade-up 0.5s ease-out 0.40s both; }
+.ob-feats .ob-feat:nth-child(1)       { animation: ob-fade-up 0.5s ease-out 0.55s both; }
+.ob-feats .ob-feat:nth-child(2)       { animation: ob-fade-up 0.5s ease-out 0.63s both; }
+.ob-feats .ob-feat:nth-child(3)       { animation: ob-fade-up 0.5s ease-out 0.71s both; }
+.ob-cta                               { animation: ob-fade-up 0.5s ease-out 0.85s both; }
+.ob-note                              { animation: ob-fade-up 0.5s ease-out 0.95s both; }
+
+/* ── Onboarding: bullet dot pop-in with bounce ── */
+@keyframes ob-dot-pop {
+  0%   { transform: scale(0);   }
+  70%  { transform: scale(1.4); }
+  100% { transform: scale(1);   }
+}
+.ob-feats .ob-feat:nth-child(1) .ob-feat-dot { animation: ob-dot-pop 0.4s ease-out 0.65s both; }
+.ob-feats .ob-feat:nth-child(2) .ob-feat-dot { animation: ob-dot-pop 0.4s ease-out 0.73s both; }
+.ob-feats .ob-feat:nth-child(3) .ob-feat-dot { animation: ob-dot-pop 0.4s ease-out 0.81s both; }
+
+/* ── Onboarding: slow aurora background hue drift ── */
+@keyframes ob-aurora-shift {
+  0%, 100% { filter: hue-rotate(0deg)  brightness(1.00); }
+  50%       { filter: hue-rotate(18deg) brightness(1.04); }
+}
+html[data-onboarding="on"] .ob-overlay {
+  animation: ob-aurora-shift 8s ease-in-out infinite;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: none; flex-direction: column; align-items: center;
+  gap: 3px; margin-top: 4px;
+}
+html[data-empty="on"] .empty-state { display: flex; }
+html[data-empty="on"] .arc-svg { opacity: 0.38; transition: opacity 0.3s ease; }
+.empty-msg {
+  font-size: 11px; font-weight: 500; color: var(--t2);
+  letter-spacing: 0.1px; text-align: center;
+}
+.empty-sub {
+  font-size: 9.5px; color: var(--t3);
+  letter-spacing: 0.1px; text-align: center; line-height: 1.4;
+  max-width: 190px;
+}
+
 /* ── Carbon mode overrides ── */
 html[data-vivid="on"] {
   /* Background */
@@ -722,6 +886,30 @@ html[data-vivid="on"][data-theme="light"] .eff-tooltip .tip-row:nth-child(1) .ti
 }
 .cookie-input::placeholder { color: var(--t3); }
 .cookie-input:focus { border-color: rgba(255,255,255,0.3); }
+/* Onboarding highlight — soft pulsing blue border */
+@keyframes ob-pulse {
+  0%, 100% { border-color: rgba(82, 186, 255, 0.75); box-shadow: 0 0 0 2px rgba(82,186,255,0.12); }
+  50%       { border-color: rgba(168,124,245, 0.85); box-shadow: 0 0 0 3px rgba(168,124,245,0.15); }
+}
+.cookie-input.ob-highlight {
+  animation: ob-pulse 2s ease-in-out infinite;
+}
+.cookie-input.ob-highlight:focus,
+.cookie-input.ob-highlight.cookie-typed {
+  animation: none;
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: none;
+}
+html[data-theme="light"] .cookie-input.ob-highlight {
+  animation: none;
+  border-color: rgba(82, 186, 255, 0.80);
+  box-shadow: 0 0 0 3px rgba(82,186,255,0.15);
+}
+html[data-theme="light"] .cookie-input.ob-highlight:focus,
+html[data-theme="light"] .cookie-input.ob-highlight.cookie-typed {
+  border-color: rgba(0,0,0,0.42);
+  box-shadow: none;
+}
 .cookie-actions { display: flex; gap: 5px; }
 .cookie-save {
   font-family: inherit; font-size: 9px; font-weight: 600;
@@ -905,10 +1093,51 @@ html[data-theme="light"] .cookie-cancel:hover {
 <body>
 <div id="app">
 
+  <!-- ── Onboarding overlay — visible only on first launch ── -->
+  <div class="ob-overlay" id="obOverlay">
+    <!-- Mini gauge icon -->
+    <div class="ob-gauge">
+      <svg width="72" height="58" viewBox="0 0 260 215">
+        <defs>
+          <linearGradient id="obGrad" gradientUnits="userSpaceOnUse" x1="65" y1="0" x2="195" y2="0">
+            <stop offset="0%"   stop-color="#52BAFF"/>
+            <stop offset="50%"  stop-color="#A87CF5"/>
+            <stop offset="100%" stop-color="#F26280"/>
+          </linearGradient>
+        </defs>
+        <!-- Track -->
+        <path d="M 64.9 190.1 A 92 92 0 1 1 195.1 190.1"
+          fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="8" stroke-linecap="round"/>
+        <!-- Filled arc ~60% — animated draw via ob-arc-draw -->
+        <path id="obArcFill" d="M 64.9 190.1 A 92 92 0 1 1 195.1 190.1"
+          fill="none" stroke="url(#obGrad)" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="267 445"/>
+        <!-- Needle — triangular polygon at resting 60% position, animated in from 0% -->
+        <g class="ob-needle-g">
+          <polygon points="171.8,43.0 133.1,126.6 126.9,123.4"
+            fill="rgba(255,255,255,0.88)"/>
+        </g>
+        <!-- Hub outer glow -->
+        <circle cx="130" cy="125" r="10" fill="rgba(255,255,255,0.12)"/>
+        <!-- Hub -->
+        <circle cx="130" cy="125" r="4.5" fill="rgba(255,255,255,0.70)"/>
+      </svg>
+    </div>
+    <div class="ob-title">Claude Token Meter</div>
+    <div class="ob-sub">Track your Claude Code token usage in real time</div>
+    <div class="ob-feats">
+      <div class="ob-feat"><span class="ob-feat-dot"></span>Monthly, weekly &amp; session usage</div>
+      <div class="ob-feat"><span class="ob-feat-dot"></span>7-day usage history chart</div>
+      <div class="ob-feat"><span class="ob-feat-dot"></span>Connect claude.ai for live data</div>
+    </div>
+    <button class="ob-cta" id="obCta"><span class="ob-cta-text">Get Started</span> <span class="ob-arrow">→</span></button>
+    <div class="ob-note">Reads from ~/.claude · No data leaves your Mac</div>
+  </div>
+
   <!-- Expired cookie banner — visible only when data-expired="on" -->
   <div class="expired-banner" id="expiredBanner">
     <span class="expired-banner-text"><b>Session expired</b> — data shown may be outdated</span>
-    <button class="expired-update-btn" id="expiredUpdateBtn">Update Key →</button>
+    <button class="expired-update-btn" id="expiredUpdateBtn">Reconnect →</button>
   </div>
 
   <div class="hdr">
@@ -1087,6 +1316,10 @@ html[data-theme="light"] .cookie-cancel:hover {
         font-size="10.5" font-weight="400" text-anchor="middle">—</text>
     </svg>
     <div id="lastSynced">⏱ Last synced <span id="lastSyncedTime">—</span></div>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-msg" id="emptyMsg">No usage this month</div>
+      <div class="empty-sub" id="emptySub">Activity appears after using Claude Code</div>
+    </div>
   </div>
 
   <!-- Stats card -->
@@ -1192,7 +1425,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   <div class="footer">
     <div class="footer-row">
       <div style="display:flex;align-items:center;gap:5px;">
-        <span class="footer-lbl">Session Cookie</span>
+        <span class="footer-lbl">Connect Claude Account</span>
         <div class="cookie-warn-wrap">
           <span class="cookie-warn" id="cookieWarn">⚠</span>
           <div class="cookie-warn-tip" id="cookieWarnTip">
@@ -1202,8 +1435,8 @@ html[data-theme="light"] .cookie-cancel:hover {
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
-        <button class="info-icon-btn" id="infoToggle" title="How to find your sessionKey">ⓘ</button>
-        <button class="cookie-btn" id="cookieToggle">Update Cookie Key</button>
+        <button class="info-icon-btn" id="infoToggle" title="How to connect via browser cookie">ⓘ</button>
+        <button class="cookie-btn" id="cookieToggle">Connect →</button>
       </div>
     </div>
     <div class="cookie-form" id="cookieForm">
@@ -1228,7 +1461,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   <!-- Info panel -->
   <div class="info-panel" id="infoPanel">
     <div class="info-hdr">
-      <span class="info-title">Finding your sessionKey</span>
+      <span class="info-title">Connect via Browser Cookie</span>
       <button class="info-close" id="infoClose">✕</button>
     </div>
     <ol class="info-steps">
@@ -1514,35 +1747,53 @@ function renderAll(d, animate) {
   }
 
   const heroPctEl = document.getElementById('heroPctNum');
-  if (animate) {
-    countUp(heroPctEl, Math.round(pct), 1400);
-    // Card shimmer on open
-    const shimmer = document.getElementById('statsShimmer');
-    if (shimmer) {
-      shimmer.classList.remove('run');
-      void shimmer.offsetWidth;
-      shimmer.classList.add('run');
-    }
-  } else {
-    heroPctEl.textContent = Math.round(pct);
-    _repositionPctSign();
-  }
-  setStatusAnimated(statusText(pct));
-  document.getElementById('updated').textContent    = d.updated||'—';
+  const hasDataEarly = !!d.has_data;  // needed before the has_data block below
 
-  const sessPctNum = document.getElementById('sessPctNum');
-  const weekPctNum = document.getElementById('weekPctNum');
-  if (animate) {
-    countUp(sessPctNum, Math.round(d.session_pct||0), 1200);
-    countUp(weekPctNum, Math.round(d.week_pct||0), 1200);
+  if (!hasDataEarly) {
+    // Empty state — blank all numbers
+    heroPctEl.textContent = '--';
+    document.getElementById('heroPctSign').style.visibility = 'hidden';
+    _repositionPctSign();
+    setStatusAnimated('—');
+    document.getElementById('updated').textContent = d.updated||'—';
+    document.getElementById('sessPctNum').textContent = '--';
+    document.getElementById('weekPctNum').textContent = '--';
+    document.getElementById('sessResetTime').textContent = 'resets --';
+    document.getElementById('weekResetTime').textContent = 'resets --';
+    document.getElementById('sessCd').textContent = '--';
+    document.getElementById('weekCd').textContent = '--';
   } else {
-    sessPctNum.textContent = Math.round(d.session_pct||0);
-    weekPctNum.textContent = Math.round(d.week_pct||0);
+    document.getElementById('heroPctSign').style.visibility = '';
+    if (animate) {
+      countUp(heroPctEl, Math.round(pct), 1400);
+      // Card shimmer on open
+      const shimmer = document.getElementById('statsShimmer');
+      if (shimmer) {
+        shimmer.classList.remove('run');
+        void shimmer.offsetWidth;
+        shimmer.classList.add('run');
+      }
+    } else {
+      heroPctEl.textContent = Math.round(pct);
+      _repositionPctSign();
+    }
+    setStatusAnimated(statusText(pct));
+    document.getElementById('updated').textContent    = d.updated||'—';
+
+    const sessPctNum = document.getElementById('sessPctNum');
+    const weekPctNum = document.getElementById('weekPctNum');
+    if (animate) {
+      countUp(sessPctNum, Math.round(d.session_pct||0), 1200);
+      countUp(weekPctNum, Math.round(d.week_pct||0), 1200);
+    } else {
+      sessPctNum.textContent = Math.round(d.session_pct||0);
+      weekPctNum.textContent = Math.round(d.week_pct||0);
+    }
+    document.getElementById('sessResetTime').textContent = 'resets '+(d.session_reset||'--');
+    document.getElementById('weekResetTime').textContent = 'resets '+(d.week_reset||'--');
+    startCountdown('sess', d.session_reset_epoch, 'sessCd');
+    startCountdown('week', d.week_reset_epoch,    'weekCd');
   }
-  document.getElementById('sessResetTime').textContent = 'resets '+(d.session_reset||'--');
-  document.getElementById('weekResetTime').textContent = 'resets '+(d.week_reset||'--');
-  startCountdown('sess', d.session_reset_epoch, 'sessCd');
-  startCountdown('week', d.week_reset_epoch,    'weekCd');
 
   // Cookie expiry warning badge
   const warn = document.getElementById('cookieWarn');
@@ -1563,6 +1814,26 @@ function renderAll(d, animate) {
     }, 600);
   }
   if (!expired) window._expiredFormOpened = false;
+
+  // Onboarding overlay — once dismissed in this session never re-show,
+  // even if a stale payload with first_launch:true arrives from a background tick
+  const firstLaunch = !!d.first_launch && !window._onboardingDone;
+  document.documentElement.setAttribute('data-onboarding', firstLaunch ? 'on' : 'off');
+
+  // Empty state (only shown when past onboarding and no data)
+  const hasData = !!d.has_data;
+  document.documentElement.setAttribute('data-empty', (!hasData && !firstLaunch) ? 'on' : 'off');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const emptySub = document.getElementById('emptySub');
+  if (emptyMsg && emptySub && !hasData) {
+    if (!d.claude_installed) {
+      emptyMsg.textContent = 'Claude Code not detected';
+      emptySub.textContent = 'Install the Claude Code CLI to track usage';
+    } else {
+      emptyMsg.textContent = 'No usage this month';
+      emptySub.textContent = 'Activity will appear after using Claude Code';
+    }
+  }
 
   renderEfficiency(d);
   if (d.daily_7) renderWeekChart(d.daily_7);
@@ -1850,6 +2121,37 @@ document.getElementById('refreshNow').addEventListener('click', () => {
 
 
 
+// ── Onboarding CTA ──
+document.getElementById('obCta').addEventListener('click', () => {
+  // Lock out any stale payload from re-showing the overlay
+  window._onboardingDone = true;
+  // Dismiss overlay
+  document.documentElement.setAttribute('data-onboarding', 'off');
+  window.webkit.messageHandlers.cm.postMessage({action: 'onboarding_done'});
+
+  // Open info tooltip so user sees the step-by-step guide
+  setTimeout(() => {
+    const infoBtn = document.getElementById('infoToggle');
+    const infoPanel = document.getElementById('infoPanel');
+    if (infoPanel && !infoPanel.classList.contains('open')) {
+      if (infoBtn) infoBtn.click();
+    }
+  }, 120);
+
+  // Open cookie form directly (no .click() — avoids bubbling to app click-outside handler)
+  setTimeout(() => {
+    const cookieForm = document.getElementById('cookieForm');
+    if (cookieForm && !cookieForm.classList.contains('open') && window._openCookieForm) {
+      window._openCookieForm();
+    }
+    // Add pulsing highlight after form has animated open
+    setTimeout(() => {
+      const input = document.getElementById('cookieInput');
+      if (input) input.classList.add('ob-highlight');
+    }, 300);
+  }, 200);
+});
+
 // ── Shared height constants (used by cookie form + efficiency toggle) ──
 const H_BASE   = 653;   // base: trimmed footer (-12px)
 const H_COOKIE = 723;   // H_BASE + 70 for cookie form
@@ -1890,13 +2192,21 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
     form.classList.remove('open');
     toggle.classList.remove('active');
     input.classList.remove('cookie-typed');
+    input.classList.remove('ob-highlight');
     app.style.height = H_BASE + 'px';
     window.webkit.messageHandlers.cm.postMessage({action:'resize', h: H_BASE});
     input.value = ''; status.textContent = ''; status.className = 'cookie-status';
   }
 
-  // Amber border clears only once the user actually starts typing
-  input.addEventListener('input', () => input.classList.add('cookie-typed'));
+  // Amber border + onboarding highlight both clear once the user starts typing
+  input.addEventListener('input', () => {
+    input.classList.add('cookie-typed');
+    input.classList.remove('ob-highlight');
+  });
+
+  // Expose openForm globally so onboarding can call it without dispatching
+  // a bubbling click event that would trigger click-outside handlers
+  window._openCookieForm = openForm;
 
   toggle.addEventListener('click', () => {
     form.classList.contains('open') ? closeForm() : openForm();
@@ -2131,6 +2441,9 @@ class MsgHandler(NSObject):
             elif action == "cookie" and self.delegate:
                 value = str(body.get("value", "")).strip()
                 self.delegate.saveCookie_(value)
+            elif action == "onboarding_done" and self.delegate:
+                self.delegate.settings["onboarding_done"] = True
+                save_settings(self.delegate.settings)
             elif action == "resize" and self.delegate:
                 h = str(int(body.get("h", POPOVER_H)))
                 self.delegate.performSelectorOnMainThread_withObject_waitUntilDone_(
