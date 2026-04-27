@@ -307,6 +307,215 @@ def fetch_claude_ai_usage(settings: dict):
     }
 
 
+# ── Leverage ratio ────────────────────────────────────────────────────────────
+
+def get_leverage_data() -> dict:
+    """
+    Compute output-to-input leverage ratio for the current and previous
+    calendar week (Mon–Sun, local time).
+
+    ratio = output_tokens / (input_tokens + cache_creation_input_tokens)
+
+    Returns:
+        ratio      – current-week aggregate ratio (float | None)
+        prev_ratio – previous-week aggregate ratio (float | None)
+        delta      – ratio − prev_ratio (float | None)
+        daily_7    – [{"day", "ratio", "today"}, …] Mon–Sun of current week
+    """
+    now         = datetime.now(timezone.utc)
+    today       = now.astimezone().date()
+    monday      = today - timedelta(days=today.weekday())
+    last_monday = monday - timedelta(days=7)
+
+    daily_in: dict  = defaultdict(int)
+    daily_out: dict = defaultdict(int)
+
+    def _si(val):
+        try:
+            return max(0, int(val or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    for entry in _load_all_entries():
+        msg = entry.get("message", {})
+        if not isinstance(msg, dict):
+            continue
+        usage = msg.get("usage")
+        if not isinstance(usage, dict):
+            continue
+
+        inp = _si(usage.get("input_tokens"))
+        cac = _si(usage.get("cache_creation_input_tokens"))
+        out = _si(usage.get("output_tokens"))
+        if not (inp + out):
+            continue
+
+        ts = _parse_ts(entry.get("timestamp", ""))
+        if ts is None:
+            continue
+        d = ts.astimezone().date()
+        if d < last_monday:
+            continue
+
+        daily_in[d]  += inp + cac
+        daily_out[d] += out
+
+    _DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    daily_7 = []
+    for i in range(7):
+        d     = monday + timedelta(days=i)
+        inp_d = daily_in.get(d, 0)
+        out_d = daily_out.get(d, 0)
+        ratio_d = round(out_d / inp_d, 3) if inp_d > 0 else None
+        daily_7.append({"day": _DAYS[i], "ratio": ratio_d, "today": d == today})
+
+    week_in  = sum(daily_in.get(monday      + timedelta(days=i), 0) for i in range(7))
+    week_out = sum(daily_out.get(monday     + timedelta(days=i), 0) for i in range(7))
+    prev_in  = sum(daily_in.get(last_monday + timedelta(days=i), 0) for i in range(7))
+    prev_out = sum(daily_out.get(last_monday + timedelta(days=i), 0) for i in range(7))
+
+    current_ratio = round(week_out / week_in, 3) if week_in > 0 else None
+    prev_ratio    = round(prev_out / prev_in, 3) if prev_in  > 0 else None
+    delta         = (round(current_ratio - prev_ratio, 3)
+                     if current_ratio is not None and prev_ratio is not None
+                     else None)
+
+    return {
+        "ratio":      current_ratio,
+        "prev_ratio": prev_ratio,
+        "delta":      delta,
+        "daily_7":    daily_7,
+    }
+
+
+# ── Session leverage (for efficiency card) ────────────────────────────────────
+
+def get_session_leverage(session_start: datetime):
+    """
+    Compute aggregate output/input leverage ratio for the current session.
+    ratio = output_tokens / (input_tokens + cache_creation_input_tokens)
+
+    Returns (ratio, message_count). ratio is None if insufficient data.
+    """
+    total_in = 0
+    total_out = 0
+    count = 0
+
+    def _si(val):
+        try:
+            return max(0, int(val or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    for entry in _load_all_entries():
+        msg = entry.get("message", {})
+        if not isinstance(msg, dict):
+            continue
+        usage = msg.get("usage")
+        if not isinstance(usage, dict):
+            continue
+        ts = _parse_ts(entry.get("timestamp", ""))
+        if ts is None or ts < session_start:
+            continue
+        inp = _si(usage.get("input_tokens"))
+        cac = _si(usage.get("cache_creation_input_tokens"))
+        out = _si(usage.get("output_tokens"))
+        if not (inp + out):
+            continue
+        total_in  += inp + cac
+        total_out += out
+        count     += 1
+
+    if total_in == 0 or count < 2:
+        return None, count
+
+    return round(total_out / total_in, 3), count
+
+
+# ── Project breakdown ────────────────────────────────────────────────────────
+
+def _project_name(cwd: str) -> str:
+    """Extract a short human-readable project name from a cwd path."""
+    if not cwd:
+        return ""
+    parts = [p for p in cwd.replace("\\", "/").split("/") if p]
+    if not parts:
+        return ""
+    name = parts[-1]
+    # If the last segment is a generic folder, prepend the parent
+    _GENERIC = {"src", "lib", "app", "dist", "build", "test", "tests",
+                "node_modules", ".git", "public", "static", "pages",
+                "components", "utils", "helpers"}
+    if name.lower() in _GENERIC and len(parts) >= 2:
+        name = parts[-2] + "/" + name
+    return name[:40]
+
+
+def get_project_breakdown(session_start: datetime, week_start: datetime) -> dict:
+    """
+    Aggregate token usage by project (cwd) for the session and billing-week windows.
+    Returns {"session": [...], "week": [...]} where each list is:
+        [{"name": str, "tokens": int, "pct": float}, ...]  (top 6, descending)
+    """
+    sess: dict = defaultdict(int)
+    week: dict = defaultdict(int)
+
+    for entry in _load_all_entries():
+        msg = entry.get("message", {})
+        if not isinstance(msg, dict):
+            continue
+        usage = msg.get("usage")
+        tokens = _extract_tokens(usage)
+        if not tokens:
+            continue
+        ts  = _parse_ts(entry.get("timestamp", ""))
+        cwd = entry.get("cwd", "") or ""
+        name = _project_name(cwd)
+        if not name:
+            continue
+        if ts and ts >= session_start:
+            sess[name] += tokens
+        if ts and ts >= week_start:
+            week[name] += tokens
+
+    def _top(d: dict, n: int = 3):
+        items = sorted(d.items(), key=lambda x: -x[1])[:n]
+        total = sum(v for _, v in items) or 1
+        return [{"name": k, "tokens": v, "pct": round(v / total * 100, 1)}
+                for k, v in items]
+
+    return {"session": _top(sess), "week": _top(week)}
+
+
+# ── Hourly heatmap ────────────────────────────────────────────────────────────
+
+def get_hourly_heatmap(days: int = 28) -> list:
+    """
+    Return a 7×24 matrix of token volumes bucketed by (day-of-week, hour-of-day).
+    Rows = Mon(0)…Sun(6), Cols = 0…23 (local time).
+    Covers the last `days` calendar days.
+    """
+    now    = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+    grid: dict = defaultdict(int)
+
+    for entry in _load_all_entries():
+        msg = entry.get("message", {})
+        if not isinstance(msg, dict):
+            continue
+        usage  = msg.get("usage")
+        tokens = _extract_tokens(usage)
+        if not tokens:
+            continue
+        ts = _parse_ts(entry.get("timestamp", ""))
+        if ts is None or ts < cutoff:
+            continue
+        local = ts.astimezone()
+        grid[(local.weekday(), local.hour)] += tokens
+
+    return [[grid.get((d, h), 0) for h in range(24)] for d in range(7)]
+
+
 # ── Payload builder ───────────────────────────────────────────────────────────
 
 def build_payload(settings: dict) -> dict:
@@ -320,7 +529,14 @@ def build_payload(settings: dict) -> dict:
     now     = datetime.now()
 
     has_cookie = bool(settings.get("session_key", "").strip())
-    live = fetch_claude_ai_usage(settings) if has_cookie else None
+    live       = fetch_claude_ai_usage(settings) if has_cookie else None
+    lev_ratio, lev_count = get_session_leverage(session_start)
+
+    week_start_dt = _week_start_utc(now_utc)
+    projects_data = (get_project_breakdown(session_start, week_start_dt)
+                     if settings.get("module_project", False) else None)
+    heatmap_data  = (get_hourly_heatmap()
+                     if settings.get("module_heatmap", False) else None)
 
     if live:
         session_pct         = live["session_pct"]
@@ -385,4 +601,8 @@ def build_payload(settings: dict) -> dict:
         "first_launch":        first_launch,
         "has_data":            has_data,
         "claude_installed":    claude_installed,
+        "lev_ratio":           lev_ratio,
+        "lev_count":           lev_count,
+        "projects":            projects_data,
+        "heatmap":             heatmap_data,
     }

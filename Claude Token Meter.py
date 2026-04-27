@@ -49,8 +49,8 @@ from meter_core import (
 )
 
 POPOVER_W  = 300
-POPOVER_H  = 653   # base: trimmed footer (-12px)
-POPOVER_H_COOKIE = 868  # WKWebView ceiling: 653 + 113 (7-day body) + 70 (cookie) + buffer
+POPOVER_H  = 593   # base: efficiency collapsed by default (-70 body)
+POPOVER_H_COOKIE = 868   # WKWebView ceiling: all panels open
 
 # ─── HTML / CSS / JS ──────────────────────────────────────────────────────────
 
@@ -122,10 +122,9 @@ body {
 }
 
 #app {
-  width: 300px; height: 653px;
+  width: 300px; height: 593px;
   background: linear-gradient(175deg, var(--g1) 0%, var(--g2) 50%, var(--g3) 100%);
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.12);
   display: flex; flex-direction: column;
   overflow: hidden;
   transition: background 0.8s ease;
@@ -302,7 +301,7 @@ html[data-vivid="on"] .gauge-carbon  { display: block; }
 .eff-tooltip {
   position: fixed;
   width: 200px;
-  background: rgba(10,22,42,0.96);
+  background: rgba(16,32,62,0.97);
   border: 1px solid rgba(255,255,255,0.18);
   border-radius: 12px;
   backdrop-filter: blur(24px) saturate(160%);
@@ -330,7 +329,7 @@ html[data-vivid="on"] .gauge-carbon  { display: block; }
   content: ''; position: absolute;
   top: calc(100% - 1px); left: 14px;
   border: 5px solid transparent;
-  border-top-color: rgba(10,22,42,0.96);
+  border-top-color: rgba(16,32,62,0.97);
   z-index: 1;
 }
 .eff-tip-title {
@@ -356,11 +355,11 @@ html[data-vivid="on"] .gauge-carbon  { display: block; }
 .arc-entry { opacity: 0; transition: opacity 1.1s ease; }
 /* Carbon mode tooltip overrides */
 html[data-vivid="on"] .eff-tooltip {
-  background: rgba(25,27,31,0.97);
+  background: rgba(38,40,50,0.97);
   border-color: rgba(255,255,255,0.10);
 }
 html[data-vivid="on"] .eff-tooltip::after {
-  border-top-color: rgba(25,27,31,0.97);
+  border-top-color: rgba(38,40,50,0.97);
 }
 html[data-vivid="on"] .eff-tooltip .tip-row:nth-child(1) .tip-dot { background: #AAD7FE !important; }
 html[data-vivid="on"] .eff-tooltip .tip-row:nth-child(2) .tip-dot { background: #98CECC !important; }
@@ -369,14 +368,14 @@ html[data-vivid="on"] .eff-tooltip .tip-row:nth-child(4) .tip-dot { background: 
 html[data-vivid="on"] .eff-tooltip .tip-row:nth-child(5) .tip-dot { background: #FF654D !important; }
 /* Carbon — cookie expired tooltip + info panel match eff-tooltip background */
 html[data-vivid="on"] .cookie-warn-tip {
-  background: rgba(25,27,31,0.97);
+  background: rgba(38,40,50,0.97);
   border-color: rgba(255,160,50,0.4);
 }
 html[data-vivid="on"] .cookie-warn-tip::before {
-  border-top-color: rgba(25,27,31,0.97);
+  border-top-color: rgba(38,40,50,0.97);
 }
 html[data-vivid="on"] .info-panel {
-  background: rgba(25,27,31,0.97);
+  background: rgba(38,40,50,0.97);
   border-color: rgba(255,255,255,0.10);
 }
 /* Carbon — "THIS SESSION" label slightly brighter for contrast */
@@ -460,6 +459,92 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
   font-size: 7.5px; color: var(--t3); letter-spacing: 0.2px;
 }
 .week-lbl.today { color: var(--t1); font-weight: 600; }
+
+/* ── Project Breakdown card ──────────────────────────────────────────────── */
+.proj-card { padding: 12px 14px 14px; }
+.proj-hdr  { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+#projBody {
+  overflow: hidden; padding: 10px 0 0;
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+}
+#projBody.open { opacity: 1; }
+#projBody.shut { max-height: 0 !important; opacity: 0; padding-top: 0; }
+.proj-tabs {
+  display: inline-flex; gap: 2px; width: fit-content;
+  background: var(--pill); border-radius: 5px; padding: 2px;
+  margin-bottom: 10px;
+}
+.proj-tab {
+  font-family: inherit; font-size: 8px; font-weight: 500;
+  color: var(--t3); background: none; border: none;
+  border-radius: 4px; padding: 2px 9px; cursor: pointer;
+  transition: all 0.15s; -webkit-appearance: none; letter-spacing: 0.2px;
+}
+.proj-tab.active { background: var(--pill-act-bg); color: var(--t1); }
+.proj-rows { display: flex; flex-direction: column; gap: 7px; }
+.proj-row  { display: flex; align-items: center; gap: 6px; }
+.proj-name {
+  font-size: 8.5px; color: var(--t2); width: 82px; flex-shrink: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  letter-spacing: 0.05px;
+}
+.proj-bar-wrap {
+  flex: 1; height: 5px;
+  background: var(--track); border-radius: 3px; overflow: hidden;
+}
+.proj-bar {
+  height: 100%; border-radius: 3px; width: 0%;
+  transition: width 0.55s cubic-bezier(0.34,1.05,0.64,1);
+}
+.proj-val {
+  font-size: 8px; color: var(--t3); opacity: 0.55; width: 34px; text-align: right;
+  flex-shrink: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.1px;
+}
+.proj-pct {
+  font-size: 8.5px; color: var(--t2); width: 28px; text-align: right;
+  flex-shrink: 0; font-variant-numeric: tabular-nums; letter-spacing: 0.1px; font-weight: 500;
+}
+.proj-empty {
+  font-size: 9px; color: var(--t3); text-align: center;
+  padding: 6px 0 2px; letter-spacing: 0.2px; display: none;
+}
+
+/* ── Hourly Heatmap card ─────────────────────────────────────────────────── */
+.heatmap-card { padding: 12px 14px 12px; }
+.heatmap-hdr  { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+#heatmapBody {
+  overflow: hidden; padding: 10px 0 0;
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.28s ease;
+}
+#heatmapBody.open { opacity: 1; }
+#heatmapBody.shut { max-height: 0 !important; opacity: 0; padding-top: 0; }
+.heatmap-grid { display: flex; flex-direction: column; gap: 2px; }
+.heatmap-row  { display: flex; align-items: center; gap: 3px; }
+.heatmap-dow  {
+  font-size: 6.5px; color: var(--t3); width: 22px; flex-shrink: 0;
+  text-align: right; letter-spacing: 0; font-weight: 500;
+}
+.heatmap-cells { display: flex; gap: 1px; flex: 1; }
+.heatmap-cell  {
+  flex: 1; height: 9px; border-radius: 1.5px;
+  background: rgba(130,100,245,0.07);
+  transition: opacity 0.2s;
+}
+.heatmap-cell:hover { opacity: 0.75; cursor: default; }
+.heatmap-axis {
+  position: relative; height: 13px;
+  margin-top: 4px; margin-left: 25px; /* align with cells (dow label width + gap) */
+}
+.heatmap-axis-lbl {
+  position: absolute; font-size: 7px; color: var(--t3); letter-spacing: 0.1px;
+  transform: translateX(-50%);
+}
+.heatmap-axis-lbl:first-child { transform: none; }
+
+/* Carbon mode — heatmap cells use amber tint */
+html[data-vivid="on"] .heatmap-cell {
+  background: rgba(255,184,0,0.06);
+}
 
 /* ── Footer ── */
 .footer {
@@ -772,23 +857,79 @@ html[data-vivid="on"][data-theme="light"] .carbon-ring-seg {
 }
 /* Carbon light — tooltip & panel backgrounds */
 html[data-vivid="on"][data-theme="light"] .eff-tooltip {
-  background: rgba(245,246,248,0.98);
+  background: rgba(255,255,255,0.99);
   border-color: rgba(0,0,0,0.12);
 }
 html[data-vivid="on"][data-theme="light"] .eff-tooltip::after {
-  border-top-color: rgba(245,246,248,0.98);
+  border-top-color: rgba(255,255,255,0.99);
 }
 html[data-vivid="on"][data-theme="light"] .cookie-warn-tip {
-  background: rgba(245,246,248,0.98);
+  background: rgba(255,255,255,0.99);
   border-color: rgba(220,140,30,0.55);
 }
 html[data-vivid="on"][data-theme="light"] .cookie-warn-tip::before {
-  border-top-color: rgba(245,246,248,0.98);
+  border-top-color: rgba(255,255,255,0.99);
 }
 html[data-vivid="on"][data-theme="light"] .info-panel {
-  background: rgba(245,246,248,0.98);
+  background: rgba(255,255,255,0.99);
   border-color: rgba(0,0,0,0.12);
 }
+/* Carbon light — info panel text */
+html[data-vivid="on"][data-theme="light"] .info-title               { color: rgba(10,14,22,0.90); }
+html[data-vivid="on"][data-theme="light"] .info-steps li            { color: rgba(10,14,22,0.72); }
+html[data-vivid="on"][data-theme="light"] .info-steps li::before    { color: rgba(10,14,22,0.65); background: rgba(0,0,0,0.10); }
+html[data-vivid="on"][data-theme="light"] .info-steps b             { color: rgba(10,14,22,0.95); }
+html[data-vivid="on"][data-theme="light"] .info-steps kbd           { color: rgba(10,14,22,0.80); background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.18); }
+
+/* Carbon light — efficiency tooltip text */
+html[data-vivid="on"][data-theme="light"] .eff-tip-title            { color: rgba(10,14,22,0.90); }
+html[data-vivid="on"][data-theme="light"] .eff-tip-body             { color: rgba(10,14,22,0.65); }
+html[data-vivid="on"][data-theme="light"] .eff-tip-body b           { color: rgba(10,14,22,0.85); }
+
+/* Carbon light — cookie warn popup text */
+html[data-vivid="on"][data-theme="light"] .cookie-warn-body         { color: rgba(10,14,22,0.65); }
+
+/* ── Aurora light mode — tooltip / panel backgrounds ── */
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tooltip {
+  background: rgba(255,255,255,0.99);
+  border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+}
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tooltip::before {
+  border-top-color: rgba(0,0,0,0.10);
+}
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tooltip::after {
+  border-top-color: rgba(255,255,255,0.99);
+}
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tip-title  { color: rgba(10,14,22,0.90); }
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tip-body   { color: rgba(10,14,22,0.62); }
+html[data-theme="light"]:not([data-vivid="on"]) .eff-tip-body b { color: rgba(10,14,22,0.85); }
+
+html[data-theme="light"]:not([data-vivid="on"]) .cookie-warn-tip {
+  background: rgba(255,255,255,0.99);
+  border-color: rgba(200,130,20,0.45);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+}
+html[data-theme="light"]:not([data-vivid="on"]) .cookie-warn-tip::after  { border-top-color: rgba(200,130,20,0.45); }
+html[data-theme="light"]:not([data-vivid="on"]) .cookie-warn-tip::before { border-top-color: rgba(255,255,255,0.99); }
+html[data-theme="light"]:not([data-vivid="on"]) .cookie-warn-body        { color: rgba(10,14,22,0.65); }
+
+html[data-theme="light"]:not([data-vivid="on"]) .info-panel {
+  background: rgba(255,255,255,0.99);
+  border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+}
+html[data-theme="light"]:not([data-vivid="on"]) .info-title        { color: rgba(10,14,22,0.90); }
+html[data-theme="light"]:not([data-vivid="on"]) .info-steps li     { color: rgba(10,14,22,0.72); }
+html[data-theme="light"]:not([data-vivid="on"]) .info-steps li::before { color: rgba(10,14,22,0.65); background: rgba(0,0,0,0.10); }
+html[data-theme="light"]:not([data-vivid="on"]) .info-steps b      { color: rgba(10,14,22,0.95); }
+html[data-theme="light"]:not([data-vivid="on"]) .info-steps kbd    { color: rgba(10,14,22,0.80); background: rgba(0,0,0,0.07); border-color: rgba(0,0,0,0.18); }
+
+/* ── Carbon light — softer tooltip shadows ── */
+html[data-vivid="on"][data-theme="light"] .eff-tooltip    { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+html[data-vivid="on"][data-theme="light"] .cookie-warn-tip { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+html[data-vivid="on"][data-theme="light"] .info-panel      { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+
 /* Carbon light — session label contrast */
 html[data-vivid="on"][data-theme="light"] #gaugeSessionLbl { opacity: 0.55; }
 /* Carbon light — LOW arc + label: darken blue for contrast on light bg */
@@ -972,7 +1113,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   position: absolute;
   bottom: calc(100% + 7px);
   left: 50%; transform: translateX(-50%);
-  background: rgba(20,10,0,0.97);
+  background: rgba(30,16,4,0.97);
   border: 1px solid rgba(255,160,50,0.4);
   border-radius: 9px;
   padding: 10px 12px;
@@ -999,7 +1140,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   position: absolute; top: calc(100% + 1px); left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: rgba(20,10,0,0.97);
+  border-top-color: rgba(30,16,4,0.97);
   z-index: 1;
 }
 .cookie-warn-title {
@@ -1026,7 +1167,7 @@ html[data-theme="light"] .cookie-cancel:hover {
   position: absolute;
   left: 14px; right: 14px;
   bottom: 88px;            /* sits just above the theme/refresh row */
-  background: rgba(10,22,42,0.96);
+  background: rgba(16,32,62,0.97);
   border: 1px solid rgba(255,255,255,0.18);
   border-radius: 12px;
   backdrop-filter: blur(24px) saturate(160%);
@@ -1361,21 +1502,23 @@ html[data-theme="light"] .cookie-cancel:hover {
         </svg>
       </button>
     </div>
+    <!-- Segment bar — always visible even when collapsed -->
+    <div class="eff-segs" style="margin-top:10px">
+      <div class="eff-seg" id="es0" style="background:#52BAFF"></div>
+      <div class="eff-seg" id="es1" style="background:#8882F0"></div>
+      <div class="eff-seg" id="es2" style="background:#A87CF5"></div>
+      <div class="eff-seg" id="es3" style="background:#D46090"></div>
+      <div class="eff-seg" id="es4" style="background:#F26280"></div>
+    </div>
+    <!-- Zone labels — always visible even when collapsed -->
+    <div class="eff-lbls">
+      <span class="eff-lbl" id="el0">Sharp</span>
+      <span class="eff-lbl" id="el1">Focused</span>
+      <span class="eff-lbl" id="el2">Moderate</span>
+      <span class="eff-lbl" id="el3">Verbose</span>
+      <span class="eff-lbl" id="el4">Scattered</span>
+    </div>
     <div id="effBody">
-      <div class="eff-segs">
-        <div class="eff-seg" id="es0" style="background:#52BAFF"></div>
-        <div class="eff-seg" id="es1" style="background:#8882F0"></div>
-        <div class="eff-seg" id="es2" style="background:#A87CF5"></div>
-        <div class="eff-seg" id="es3" style="background:#D46090"></div>
-        <div class="eff-seg" id="es4" style="background:#F26280"></div>
-      </div>
-      <div class="eff-lbls">
-        <span class="eff-lbl" id="el0">Sharp</span>
-        <span class="eff-lbl" id="el1">Focused</span>
-        <span class="eff-lbl" id="el2">Moderate</span>
-        <span class="eff-lbl" id="el3">Verbose</span>
-        <span class="eff-lbl" id="el4">Scattered</span>
-      </div>
       <div class="eff-meta" id="effMeta">collecting data…</div>
       <div class="eff-hist">
         <div class="eff-hist-col">
@@ -1395,12 +1538,12 @@ html[data-theme="light"] .cookie-cancel:hover {
   <div class="eff-tooltip" id="effTooltip">
     <div class="eff-tip-title">How it's calculated</div>
     <div class="eff-tip-body">
-      Measures your average token burn rate in <b>tokens per minute</b> across recent prompts.
-      <div class="tip-row"><span class="tip-dot" style="background:#52BAFF"></span><span><b>Sharp</b> ≤150 — concise, targeted prompts</span></div>
-      <div class="tip-row"><span class="tip-dot" style="background:#8882F0"></span><span><b>Focused</b> 151–350 — clear with context</span></div>
-      <div class="tip-row"><span class="tip-dot" style="background:#A87CF5"></span><span><b>Moderate</b> 351–600 — some verbosity</span></div>
-      <div class="tip-row"><span class="tip-dot" style="background:#D46090"></span><span><b>Verbose</b> 601–900 — heavy prompts</span></div>
-      <div class="tip-row"><span class="tip-dot" style="background:#F26280"></span><span><b>Scattered</b> >900 — very high token rate</span></div>
+      Measures <b>output ÷ input</b> token ratio this session — how much Claude generates per token you send.
+      <div class="tip-row"><span class="tip-dot" style="background:#52BAFF"></span><span><b>Sharp</b> ≥0.30 — concise, high-leverage prompts</span></div>
+      <div class="tip-row"><span class="tip-dot" style="background:#8882F0"></span><span><b>Focused</b> 0.18–0.30 — clear with good return</span></div>
+      <div class="tip-row"><span class="tip-dot" style="background:#A87CF5"></span><span><b>Moderate</b> 0.10–0.18 — typical usage</span></div>
+      <div class="tip-row"><span class="tip-dot" style="background:#D46090"></span><span><b>Verbose</b> 0.05–0.10 — high input overhead</span></div>
+      <div class="tip-row"><span class="tip-dot" style="background:#F26280"></span><span><b>Scattered</b> &lt;0.05 — very padded prompts</span></div>
     </div>
   </div>
 
@@ -1418,6 +1561,44 @@ html[data-theme="light"] .cookie-cancel:hover {
     <div id="weekChartBody">
       <div class="week-chart" id="weekChart"></div>
       <div class="week-labels" id="weekLabels"></div>
+    </div>
+  </div>
+
+  <!-- Project Breakdown card (hidden until module enabled) -->
+  <div class="card proj-card" id="projectCard" style="display:none">
+    <div class="shimmer-overlay" id="projShimmer"></div>
+    <div class="proj-hdr" id="projHdr">
+      <span class="stat-lbl">PROJECT BREAKDOWN</span>
+      <button class="eff-toggle" id="projToggle" title="Show / hide">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div id="projBody">
+      <div class="proj-tabs">
+        <button class="proj-tab active" id="projTabSess" data-mode="session">Session</button>
+        <button class="proj-tab"        id="projTabWeek" data-mode="week">This Week</button>
+      </div>
+      <div class="proj-rows" id="projRows"></div>
+      <div class="proj-empty" id="projEmpty">No project data yet</div>
+    </div>
+  </div>
+
+  <!-- Hourly Heatmap card (hidden until module enabled) -->
+  <div class="card heatmap-card" id="heatmapCard" style="display:none">
+    <div class="shimmer-overlay" id="heatmapShimmer"></div>
+    <div class="heatmap-hdr" id="heatmapHdr">
+      <span class="stat-lbl">HOURLY HEATMAP</span>
+      <button class="eff-toggle" id="heatmapToggle" title="Show / hide">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div id="heatmapBody">
+      <div class="heatmap-grid" id="heatmapGrid"></div>
+      <div class="heatmap-axis" id="heatmapAxis"></div>
     </div>
   </div>
 
@@ -1477,6 +1658,10 @@ html[data-theme="light"] .cookie-cancel:hover {
 
 </div>
 <script>
+/* anime.js v3.2.2 — embedded inline */
+!function(n,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):n.anime=e()}(this,function(){"use strict";var i={update:null,begin:null,loopBegin:null,changeBegin:null,change:null,changeComplete:null,loopComplete:null,complete:null,loop:1,direction:"normal",autoplay:!0,timelineOffset:0},M={duration:1e3,delay:0,endDelay:0,easing:"easeOutElastic(1, .5)",round:0},j=["translateX","translateY","translateZ","rotate","rotateX","rotateY","rotateZ","scale","scaleX","scaleY","scaleZ","skew","skewX","skewY","perspective","matrix","matrix3d"],l={CSS:{},springs:{}};function C(n,e,t){return Math.min(Math.max(n,e),t)}function u(n,e){return-1<n.indexOf(e)}function o(n,e){return n.apply(null,e)}var w={arr:function(n){return Array.isArray(n)},obj:function(n){return u(Object.prototype.toString.call(n),"Object")},pth:function(n){return w.obj(n)&&n.hasOwnProperty("totalLength")},svg:function(n){return n instanceof SVGElement},inp:function(n){return n instanceof HTMLInputElement},dom:function(n){return n.nodeType||w.svg(n)},str:function(n){return"string"==typeof n},fnc:function(n){return"function"==typeof n},und:function(n){return void 0===n},nil:function(n){return w.und(n)||null===n},hex:function(n){return/(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(n)},rgb:function(n){return/^rgb/.test(n)},hsl:function(n){return/^hsl/.test(n)},col:function(n){return w.hex(n)||w.rgb(n)||w.hsl(n)},key:function(n){return!i.hasOwnProperty(n)&&!M.hasOwnProperty(n)&&"targets"!==n&&"keyframes"!==n}};function d(n){n=/\(([^)]+)\)/.exec(n);return n?n[1].split(",").map(function(n){return parseFloat(n)}):[]}function c(r,t){var n=d(r),e=C(w.und(n[0])?1:n[0],.1,100),a=C(w.und(n[1])?100:n[1],.1,100),o=C(w.und(n[2])?10:n[2],.1,100),n=C(w.und(n[3])?0:n[3],.1,100),u=Math.sqrt(a/e),i=o/(2*Math.sqrt(a*e)),c=i<1?u*Math.sqrt(1-i*i):0,s=i<1?(i*u-n)/c:-n+u;function f(n){var e=t?t*n/1e3:n,e=i<1?Math.exp(-e*i*u)*(+Math.cos(c*e)+s*Math.sin(c*e)):(1+s*e)*Math.exp(-e*u);return 0===n||1===n?n:1-e}return t?f:function(){var n=l.springs[r];if(n)return n;for(var e=0,t=0;;)if(1===f(e+=1/6)){if(16<=++t)break}else t=0;return n=e*(1/6)*1e3,l.springs[r]=n}}function q(e){return void 0===e&&(e=10),function(n){return Math.ceil(C(n,1e-6,1)*e)*(1/e)}}var H=function(b,e,M,t){if(0<=b&&b<=1&&0<=M&&M<=1){var x=new Float32Array(11);if(b!==e||M!==t)for(var n=0;n<11;++n)x[n]=k(.1*n,b,M);return function(n){return b===e&&M===t||0===n||1===n?n:k(r(n),e,t)}}function r(n){for(var e=0,t=1;10!==t&&x[t]<=n;++t)e+=.1;var r=e+.1*((n-x[--t])/(x[t+1]-x[t])),a=O(r,b,M);if(.001<=a){for(var o=n,u=r,i=b,c=M,s=0;s<4;++s){var f=O(u,i,c);if(0===f)return u;u-=(k(u,i,c)-o)/f}return u}if(0===a)return r;for(var l,d,p=n,h=e,g=e+.1,m=b,v=M,y=0;0<(l=k(d=h+(g-h)/2,m,v)-p)?g=d:h=d,1e-7<Math.abs(l)&&++y<10;);return d}};function r(n,e){return 1-3*e+3*n}function k(n,e,t){return((r(e,t)*n+(3*t-6*e))*n+3*e)*n}function O(n,e,t){return 3*r(e,t)*n*n+2*(3*t-6*e)*n+3*e}e={linear:function(){return function(n){return n}}},t={Sine:function(){return function(n){return 1-Math.cos(n*Math.PI/2)}},Expo:function(){return function(n){return n?Math.pow(2,10*n-10):0}},Circ:function(){return function(n){return 1-Math.sqrt(1-n*n)}},Back:function(){return function(n){return n*n*(3*n-2)}},Bounce:function(){return function(n){for(var e,t=4;n<((e=Math.pow(2,--t))-1)/11;);return 1/Math.pow(4,3-t)-7.5625*Math.pow((3*e-2)/22-n,2)}},Elastic:function(n,e){void 0===e&&(e=.5);var t=C(n=void 0===n?1:n,1,10),r=C(e,.1,2);return function(n){return 0===n||1===n?n:-t*Math.pow(2,10*(n-1))*Math.sin((n-1-r/(2*Math.PI)*Math.asin(1/t))*(2*Math.PI)/r)}}},["Quad","Cubic","Quart","Quint"].forEach(function(n,e){t[n]=function(){return function(n){return Math.pow(n,e+2)}}}),Object.keys(t).forEach(function(n){var r=t[n];e["easeIn"+n]=r,e["easeOut"+n]=function(e,t){return function(n){return 1-r(e,t)(1-n)}},e["easeInOut"+n]=function(e,t){return function(n){return n<.5?r(e,t)(2*n)/2:1-r(e,t)(-2*n+2)/2}},e["easeOutIn"+n]=function(e,t){return function(n){return n<.5?(1-r(e,t)(1-2*n))/2:(r(e,t)(2*n-1)+1)/2}}});var e,t,s=e;function P(n,e){if(w.fnc(n))return n;var t=n.split("(")[0],r=s[t],a=d(n);switch(t){case"spring":return c(n,e);case"cubicBezier":return o(H,a);case"steps":return o(q,a);default:return o(r,a)}}function a(n){try{return document.querySelectorAll(n)}catch(n){}}function I(n,e){for(var t,r=n.length,a=2<=arguments.length?e:void 0,o=[],u=0;u<r;u++)u in n&&(t=n[u],e.call(a,t,u,n))&&o.push(t);return o}function f(n){return n.reduce(function(n,e){return n.concat(w.arr(e)?f(e):e)},[])}function p(n){return w.arr(n)?n:(n=w.str(n)?a(n)||n:n)instanceof NodeList||n instanceof HTMLCollection?[].slice.call(n):[n]}function h(n,e){return n.some(function(n){return n===e})}function g(n){var e,t={};for(e in n)t[e]=n[e];return t}function x(n,e){var t,r=g(n);for(t in n)r[t]=(e.hasOwnProperty(t)?e:n)[t];return r}function D(n,e){var t,r=g(n);for(t in e)r[t]=(w.und(n[t])?e:n)[t];return r}function V(n){var e,t,r,a,o,u,i;return w.rgb(n)?(e=/rgb\((\d+,\s*[\d]+,\s*[\d]+)\)/g.exec(t=n))?"rgba("+e[1]+",1)":t:w.hex(n)?(e=(e=n).replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i,function(n,e,t,r){return e+e+t+t+r+r}),e=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(e),"rgba("+parseInt(e[1],16)+","+parseInt(e[2],16)+","+parseInt(e[3],16)+",1)"):w.hsl(n)?(t=/hsl\((\d+),\s*([\d.]+)%,\s*([\d.]+)%\)/g.exec(t=n)||/hsla\((\d+),\s*([\d.]+)%,\s*([\d.]+)%,\s*([\d.]+)\)/g.exec(t),n=parseInt(t[1],10)/360,u=parseInt(t[2],10)/100,i=parseInt(t[3],10)/100,t=t[4]||1,0==u?r=a=o=i:(r=c(u=2*i-(i=i<.5?i*(1+u):i+u-i*u),i,n+1/3),a=c(u,i,n),o=c(u,i,n-1/3)),"rgba("+255*r+","+255*a+","+255*o+","+t+")"):void 0;function c(n,e,t){return t<0&&(t+=1),1<t&&--t,t<1/6?n+6*(e-n)*t:t<.5?e:t<2/3?n+(e-n)*(2/3-t)*6:n}}function B(n){n=/[+-]?\d*\.?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(%|px|pt|em|rem|in|cm|mm|ex|ch|pc|vw|vh|vmin|vmax|deg|rad|turn)?$/.exec(n);if(n)return n[1]}function m(n,e){return w.fnc(n)?n(e.target,e.id,e.total):n}function v(n,e){return n.getAttribute(e)}function y(n,e,t){var r,a,o;return h([t,"deg","rad","turn"],B(e))?e:(r=l.CSS[e+t],w.und(r)?(a=document.createElement(n.tagName),(n=n.parentNode&&n.parentNode!==document?n.parentNode:document.body).appendChild(a),a.style.position="absolute",a.style.width=100+t,o=100/a.offsetWidth,n.removeChild(a),n=o*parseFloat(e),l.CSS[e+t]=n):r)}function $(n,e,t){var r;if(e in n.style)return r=e.replace(/([a-z])([A-Z])/g,"$1-$2").toLowerCase(),e=n.style[e]||getComputedStyle(n).getPropertyValue(r)||"0",t?y(n,e,t):e}function b(n,e){return w.dom(n)&&!w.inp(n)&&(!w.nil(v(n,e))||w.svg(n)&&n[e])?"attribute":w.dom(n)&&h(j,e)?"transform":w.dom(n)&&"transform"!==e&&$(n,e)?"css":null!=n[e]?"object":void 0}function W(n){if(w.dom(n)){for(var e,t=n.style.transform||"",r=/(\w+)\(([^)]*)\)/g,a=new Map;e=r.exec(t);)a.set(e[1],e[2]);return a}}function X(n,e,t,r){var a=u(e,"scale")?1:0+(u(a=e,"translate")||"perspective"===a?"px":u(a,"rotate")||u(a,"skew")?"deg":void 0),o=W(n).get(e)||a;return t&&(t.transforms.list.set(e,o),t.transforms.last=e),r?y(n,o,r):o}function T(n,e,t,r){switch(b(n,e)){case"transform":return X(n,e,r,t);case"css":return $(n,e,t);case"attribute":return v(n,e);default:return n[e]||0}}function E(n,e){var t=/^(\*=|\+=|-=)/.exec(n);if(!t)return n;var r=B(n)||0,a=parseFloat(e),o=parseFloat(n.replace(t[0],""));switch(t[0][0]){case"+":return a+o+r;case"-":return a-o+r;case"*":return a*o+r}}function Y(n,e){var t;return w.col(n)?V(n):/\s/g.test(n)?n:(t=(t=B(n))?n.substr(0,n.length-t.length):n,e?t+e:t)}function F(n,e){return Math.sqrt(Math.pow(e.x-n.x,2)+Math.pow(e.y-n.y,2))}function Z(n){for(var e,t=n.points,r=0,a=0;a<t.numberOfItems;a++){var o=t.getItem(a);0<a&&(r+=F(e,o)),e=o}return r}function G(n){if(n.getTotalLength)return n.getTotalLength();switch(n.tagName.toLowerCase()){case"circle":return 2*Math.PI*v(n,"r");case"rect":return 2*v(t=n,"width")+2*v(t,"height");case"line":return F({x:v(t=n,"x1"),y:v(t,"y1")},{x:v(t,"x2"),y:v(t,"y2")});case"polyline":return Z(n);case"polygon":return e=n.points,Z(n)+F(e.getItem(e.numberOfItems-1),e.getItem(0))}var e,t}function Q(n,e){var e=e||{},n=e.el||function(n){for(var e=n.parentNode;w.svg(e)&&w.svg(e.parentNode);)e=e.parentNode;return e}(n),t=n.getBoundingClientRect(),r=v(n,"viewBox"),a=t.width,t=t.height,e=e.viewBox||(r?r.split(" "):[0,0,a,t]);return{el:n,viewBox:e,x:+e[0],y:+e[1],w:a,h:t,vW:e[2],vH:e[3]}}function z(n,e){var t=/[+-]?\d*\.?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,r=Y(w.pth(n)?n.totalLength:n,e)+"";return{original:r,numbers:r.match(t)?r.match(t).map(Number):[0],strings:w.str(n)||e?r.split(t):[]}}function A(n){return I(n?f(w.arr(n)?n.map(p):p(n)):[],function(n,e,t){return t.indexOf(n)===e})}function _(n){var t=A(n);return t.map(function(n,e){return{target:n,id:e,total:t.length,transforms:{list:W(n)}}})}function R(e){for(var t=I(f(e.map(function(n){return Object.keys(n)})),function(n){return w.key(n)}).reduce(function(n,e){return n.indexOf(e)<0&&n.push(e),n},[]),a={},n=0;n<t.length;n++)!function(n){var r=t[n];a[r]=e.map(function(n){var e,t={};for(e in n)w.key(e)?e==r&&(t.value=n[e]):t[e]=n[e];return t})}(n);return a}function J(n,e){var t,r=[],a=e.keyframes;for(t in e=a?D(R(a),e):e)w.key(t)&&r.push({name:t,tweens:function(n,t){var e,r=g(t),a=(/^spring/.test(r.easing)&&(r.duration=c(r.easing)),w.arr(n)&&(2===(e=n.length)&&!w.obj(n[0])?n={value:n}:w.fnc(t.duration)||(r.duration=t.duration/e)),w.arr(n)?n:[n]);return a.map(function(n,e){n=w.obj(n)&&!w.pth(n)?n:{value:n};return w.und(n.delay)&&(n.delay=e?0:t.delay),w.und(n.endDelay)&&(n.endDelay=e===a.length-1?t.endDelay:0),n}).map(function(n){return D(n,r)})}(e[t],n)});return r}function K(i,c){var s;return i.tweens.map(function(n){var n=function(n,e){var t,r={};for(t in n){var a=m(n[t],e);w.arr(a)&&1===(a=a.map(function(n){return m(n,e)})).length&&(a=a[0]),r[t]=a}return r.duration=parseFloat(r.duration),r.delay=parseFloat(r.delay),r}(n,c),e=n.value,t=w.arr(e)?e[1]:e,r=B(t),a=T(c.target,i.name,r,c),o=s?s.to.original:a,u=w.arr(e)?e[0]:o,a=B(u)||B(a),r=r||a;return w.und(t)&&(t=o),n.from=z(u,r),n.to=z(E(t,u),r),n.start=s?s.end:0,n.end=n.start+n.delay+n.duration+n.endDelay,n.easing=P(n.easing,n.duration),n.isPath=w.pth(e),n.isPathTargetInsideSVG=n.isPath&&w.svg(c.target),n.isColor=w.col(n.from.original),n.isColor&&(n.round=1),s=n})}var U={css:function(n,e,t){return n.style[e]=t},attribute:function(n,e,t){return n.setAttribute(e,t)},object:function(n,e,t){return n[e]=t},transform:function(n,e,t,r,a){var o;r.list.set(e,t),e!==r.last&&!a||(o="",r.list.forEach(function(n,e){o+=e+"("+n+") "}),n.style.transform=o)}};function nn(n,u){_(n).forEach(function(n){for(var e in u){var t=m(u[e],n),r=n.target,a=B(t),o=T(r,e,a,n),t=E(Y(t,a||B(o)),o),a=b(r,e);U[a](r,e,t,n.transforms,!0)}})}function en(n,e){return I(f(n.map(function(o){return e.map(function(n){var e,t,r=o,a=b(r.target,n.name);if(a)return t=(e=K(n,r))[e.length-1],{type:a,property:n.name,animatable:r,tweens:e,duration:t.end,delay:e[0].delay,endDelay:t.endDelay}})})),function(n){return!w.und(n)})}function tn(n,e){function t(n){return n.timelineOffset||0}var r=n.length,a={};return a.duration=r?Math.max.apply(Math,n.map(function(n){return t(n)+n.duration})):e.duration,a.delay=r?Math.min.apply(Math,n.map(function(n){return t(n)+n.delay})):e.delay,a.endDelay=r?a.duration-Math.max.apply(Math,n.map(function(n){return t(n)+n.duration-n.endDelay})):e.endDelay,a}var rn=0;var N,S=[],an=("undefined"!=typeof document&&document.addEventListener("visibilitychange",function(){L.suspendWhenDocumentHidden&&(n()?N=cancelAnimationFrame(N):(S.forEach(function(n){return n._onDocumentVisibility()}),an()))}),function(){!(N||n()&&L.suspendWhenDocumentHidden)&&0<S.length&&(N=requestAnimationFrame(on))});function on(n){for(var e=S.length,t=0;t<e;){var r=S[t];r.paused?(S.splice(t,1),e--):(r.tick(n),t++)}N=0<t?requestAnimationFrame(on):void 0}function n(){return document&&document.hidden}function L(n){var c,s=0,f=0,l=0,d=0,p=null;function h(n){var e=window.Promise&&new Promise(function(n){return p=n});return n.finished=e}e=x(i,n=n=void 0===n?{}:n),t=J(r=x(M,n),n),n=_(n.targets),r=tn(t=en(n,t),r),a=rn,rn++;var e,t,r,a,k=D(e,{id:a,children:[],animatables:n,animations:t,duration:r.duration,delay:r.delay,endDelay:r.endDelay});h(k);function g(){var n=k.direction;"alternate"!==n&&(k.direction="normal"!==n?"normal":"reverse"),k.reversed=!k.reversed,c.forEach(function(n){return n.reversed=k.reversed})}function m(n){return k.reversed?k.duration-n:n}function o(){s=0,f=m(k.currentTime)*(1/L.speed)}function v(n,e){e&&e.seek(n-e.timelineOffset)}function y(e){for(var n=0,t=k.animations,r=t.length;n<r;){for(var a=t[n],o=a.animatable,u=a.tweens,i=u.length-1,c=u[i],i=(i&&(c=I(u,function(n){return e<n.end})[0]||c),C(e-c.start-c.delay,0,c.duration)/c.duration),s=isNaN(i)?1:c.easing(i),f=c.to.strings,l=c.round,d=[],p=c.to.numbers.length,h=void 0,g=0;g<p;g++){var m=void 0,v=c.to.numbers[g],y=c.from.numbers[g]||0,m=c.isPath?function(e,t,n){function r(n){return e.el.getPointAtLength(1<=t+(n=void 0===n?0:n)?t+n:0)}var a=Q(e.el,e.svg),o=r(),u=r(-1),i=r(1),c=n?1:a.w/a.vW,s=n?1:a.h/a.vH;switch(e.property){case"x":return(o.x-a.x)*c;case"y":return(o.y-a.y)*s;case"angle":return 180*Math.atan2(i.y-u.y,i.x-u.x)/Math.PI}}(c.value,s*v,c.isPathTargetInsideSVG):y+s*(v-y);!l||c.isColor&&2<g||(m=Math.round(m*l)/l),d.push(m)}var b=f.length;if(b)for(var h=f[0],M=0;M<b;M++){f[M];var x=f[M+1],w=d[M];isNaN(w)||(h+=x?w+x:w+" ")}else h=d[0];U[a.type](o.target,a.property,h,o.transforms),a.currentValue=h,n++}}function b(n){k[n]&&!k.passThrough&&k[n](k)}function u(n){var e=k.duration,t=k.delay,r=e-k.endDelay,a=m(n);if(k.progress=C(a/e*100,0,100),k.reversePlayback=a<k.currentTime,c){var o=a;if(k.reversePlayback)for(var u=d;u--;)v(o,c[u]);else for(var i=0;i<d;i++)v(o,c[i])}!k.began&&0<k.currentTime&&(k.began=!0,b("begin")),!k.loopBegan&&0<k.currentTime&&(k.loopBegan=!0,b("loopBegin")),a<=t&&0!==k.currentTime&&y(0),(r<=a&&k.currentTime!==e||!e)&&y(e),t<a&&a<r?(k.changeBegan||(k.changeBegan=!0,k.changeCompleted=!1,b("changeBegin")),b("change"),y(a)):k.changeBegan&&(k.changeCompleted=!0,k.changeBegan=!1,b("changeComplete")),k.currentTime=C(a,0,e),k.began&&b("update"),e<=n&&(f=0,k.remaining&&!0!==k.remaining&&k.remaining--,k.remaining?(s=l,b("loopComplete"),k.loopBegan=!1,"alternate"===k.direction&&g()):(k.paused=!0,k.completed||(k.completed=!0,b("loopComplete"),b("complete"),!k.passThrough&&"Promise"in window&&(p(),h(k)))))}return k.reset=function(){var n=k.direction;k.passThrough=!1,k.currentTime=0,k.progress=0,k.paused=!0,k.began=!1,k.loopBegan=!1,k.changeBegan=!1,k.completed=!1,k.changeCompleted=!1,k.reversePlayback=!1,k.reversed="reverse"===n,k.remaining=k.loop,c=k.children;for(var e=d=c.length;e--;)k.children[e].reset();(k.reversed&&!0!==k.loop||"alternate"===n&&1===k.loop)&&k.remaining++,y(k.reversed?k.duration:0)},k._onDocumentVisibility=o,k.set=function(n,e){return nn(n,e),k},k.tick=function(n){u(((l=n)+(f-(s=s||l)))*L.speed)},k.seek=function(n){u(m(n))},k.pause=function(){k.paused=!0,o()},k.play=function(){k.paused&&(k.completed&&k.reset(),k.paused=!1,S.push(k),o(),an())},k.reverse=function(){g(),k.completed=!k.reversed,o()},k.restart=function(){k.reset(),k.play()},k.remove=function(n){cn(A(n),k)},k.reset(),k.autoplay&&k.play(),k}function un(n,e){for(var t=e.length;t--;)h(n,e[t].animatable.target)&&e.splice(t,1)}function cn(n,e){var t=e.animations,r=e.children;un(n,t);for(var a=r.length;a--;){var o=r[a],u=o.animations;un(n,u),u.length||o.children.length||r.splice(a,1)}t.length||r.length||e.pause()}return L.version="3.2.2",L.speed=1,L.suspendWhenDocumentHidden=!0,L.running=S,L.remove=function(n){for(var e=A(n),t=S.length;t--;)cn(e,S[t])},L.get=T,L.set=nn,L.convertPx=y,L.path=function(n,e){var t=w.str(n)?a(n)[0]:n,r=e||100;return function(n){return{property:n,el:t,svg:Q(t),totalLength:G(t)*(r/100)}}},L.setDashoffset=function(n){var e=G(n);return n.setAttribute("stroke-dasharray",e),e},L.stagger=function(n,e){var i=(e=void 0===e?{}:e).direction||"normal",c=e.easing?P(e.easing):null,s=e.grid,f=e.axis,l=e.from||0,d="first"===l,p="center"===l,h="last"===l,g=w.arr(n),m=g?parseFloat(n[0]):parseFloat(n),v=g?parseFloat(n[1]):0,y=B(g?n[1]:n)||0,b=e.start||0+(g?m:0),M=[],x=0;return function(n,e,t){if(d&&(l=0),p&&(l=(t-1)/2),h&&(l=t-1),!M.length){for(var r,a,o,u=0;u<t;u++)s?(r=p?(s[0]-1)/2:l%s[0],a=p?(s[1]-1)/2:Math.floor(l/s[0]),r=r-u%s[0],a=a-Math.floor(u/s[0]),o=Math.sqrt(r*r+a*a),"x"===f&&(o=-r),M.push(o="y"===f?-a:o)):M.push(Math.abs(l-u)),x=Math.max.apply(Math,M);c&&(M=M.map(function(n){return c(n/x)*x})),"reverse"===i&&(M=M.map(function(n){return f?n<0?-1*n:-n:Math.abs(x-n)}))}return b+(g?(v-m)/x:m)*(Math.round(100*M[e])/100)+y}},L.timeline=function(u){var i=L(u=void 0===u?{}:u);return i.duration=0,i.add=function(n,e){var t=S.indexOf(i),r=i.children;function a(n){n.passThrough=!0}-1<t&&S.splice(t,1);for(var o=0;o<r.length;o++)a(r[o]);t=D(n,x(M,u)),t.targets=t.targets||u.targets,n=i.duration,t.autoplay=!1,t.direction=i.direction,t.timelineOffset=w.und(e)?n:E(e,n),a(i),i.seek(t.timelineOffset),e=L(t),a(e),r.push(e),n=tn(r,u);return i.delay=n.delay,i.endDelay=n.endDelay,i.duration=n.duration,i.seek(0),i.reset(),i.autoplay&&i.play(),i},i},L.easing=P,L.penner=s,L.random=function(n,e){return Math.floor(Math.random()*(e-n+1))+n},L});
+</script>
+<script>
 // ── Gauge constants (270° full-circle style) ──
 const GAUGE_R   = 92;
 const GAUGE_CX  = 130;
@@ -1514,7 +1699,7 @@ function _setCarbonPulse(pct) {
 
 function _carbonArcEntry(pct, callback) {
   const arcs = ['arcLow','arcMed','arcHigh'];
-  // Hide all arcs instantly, then fade each in via inline transition
+  // Hide all arcs instantly
   arcs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1523,17 +1708,15 @@ function _carbonArcEntry(pct, callback) {
       el.style.opacity = '0';
     }
   });
-  const delays = [0, 280, 560];
-  arcs.forEach((id, i) => {
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.style.transition = 'opacity 0.85s ease';
-        el.style.opacity = '1';
-      }
-      // After last arc finishes fading in, start the pulse (clears inline styles)
-      if (i === arcs.length - 1 && callback) setTimeout(callback, 900);
-    }, delays[i]);
+  // Staggered fade-in via anime.js
+  const targets = arcs.map(id => document.getElementById(id)).filter(Boolean);
+  anime({
+    targets,
+    opacity: [0, 1],
+    duration: 850,
+    delay: anime.stagger(280),
+    easing: 'easeOutQuad',
+    complete: () => { if (callback) callback(); }
   });
 }
 
@@ -1664,13 +1847,16 @@ function statusText(pct) {
 
 // ── Status crossfade ─────────────────────────────────────────────────────────
 let _lastStatus = '';
+let _statusAnim = null;
 function setStatusAnimated(text) {
   const el = document.getElementById('heroStatus');
   if (!el || text === _lastStatus) return;
   _lastStatus = text;
-  el.style.transition = 'opacity 0.18s ease';
-  el.style.opacity = '0';
-  setTimeout(() => { el.textContent = text; el.style.opacity = '1'; }, 185);
+  if (_statusAnim) { _statusAnim.pause(); _statusAnim = null; }
+  _statusAnim = anime.timeline({ easing: 'easeOutQuad' })
+    .add({ targets: el, opacity: 0, duration: 160 })
+    .add({ targets: el, opacity: 1, duration: 220,
+           begin: () => { el.textContent = text; } });
 }
 
 // ── Count-up with pop on finish ───────────────────────────────────────────────
@@ -1683,22 +1869,22 @@ function popEl(el) {
 }
 
 function countUp(el, target, duration) {
-  if (el._countUpRaf) cancelAnimationFrame(el._countUpRaf);
-  const start     = parseFloat(el.textContent) || 0;
-  const startTime = performance.now();
-  function step(now) {
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    el.textContent = Math.round(start + (target - start) * ease);
-    if (el.id === 'heroPctNum') _repositionPctSign();
-    if (t < 1) {
-      el._countUpRaf = requestAnimationFrame(step);
-    } else {
-      el._countUpRaf = null;
-      popEl(el);
-    }
-  }
-  el._countUpRaf = requestAnimationFrame(step);
+  if (el._animeInst) { el._animeInst.pause(); el._animeInst = null; }
+  const start = parseFloat(el.textContent) || 0;
+  // Use a plain object as a tween proxy — anime updates obj.val each frame
+  const proxy = { val: start };
+  el._animeInst = anime({
+    targets: proxy,
+    val: target,
+    duration,
+    round: 1,
+    easing: 'easeOutCubic',
+    update: () => {
+      el.textContent = proxy.val;
+      if (el.id === 'heroPctNum') _repositionPctSign();
+    },
+    complete: () => { el._animeInst = null; popEl(el); }
+  });
 }
 
 // Reposition % sign so it sits just after the number, keeping number centered at x=130
@@ -1728,18 +1914,21 @@ function renderAll(d, animate) {
       });
       setTimeout(() => _animateNeedle(pct), 600);
     } else {
-      // Default: reset gradient arc then animate it in
+      // Aurora: anime.js sweeps the arc in from 0 → target
       if (fillEl) {
         fillEl.classList.remove('arc-glow');
-        fillEl.style.transition = 'none';
-        fillEl.style.strokeDasharray = '0 ' + (GAUGE_LEN + 10).toFixed(2);
-        void window.getComputedStyle(fillEl).strokeDasharray;
-        fillEl.style.transition = '';
+        const BIG = (GAUGE_LEN + 10).toFixed(2);
+        fillEl.setAttribute('stroke-dasharray', '0 ' + BIG);
+        const targetLen = ((pct / 100) * GAUGE_LEN).toFixed(2);
+        anime({
+          targets: fillEl,
+          strokeDasharray: targetLen + ' ' + BIG,
+          duration: 1100,
+          easing: 'easeOutCubic',
+          complete: () => { if (pct > 0) fillEl.classList.add('arc-glow'); }
+        });
+        _animateNeedle(pct);
       }
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        updateArc(pct);
-        fillEl?.classList.toggle('arc-glow', pct > 0);
-      }));
     }
   } else {
     updateArc(pct);
@@ -1837,16 +2026,74 @@ function renderAll(d, animate) {
 
   renderEfficiency(d);
   if (d.daily_7) renderWeekChart(d.daily_7);
+  renderProjectBreakdown(d);
+  renderHeatmap(d);
+  applyModules(d);
 }
 
-// ── Prompt Efficiency ─────────────────────────────────────────────────────────
+// ── Modules: show/hide optional cards ─────────────────────────────────────────
+function applyModules(d) {
+  if (!d.modules) return;
+  const app = document.getElementById('app');
+  const cards = [
+    { id: 'effCard',       key: 'eff'     },
+    { id: 'weekChartCard', key: 'week'    },
+    { id: 'projectCard',   key: 'project' },
+    { id: 'heatmapCard',   key: 'heatmap' },
+  ];
+  let delta = 0;
+
+  for (const {id, key} of cards) {
+    const card = document.getElementById(id);
+    if (!card) continue;
+    const shouldShow = !!d.modules[key];
+    const isVisible  = card.style.display !== 'none';
+    if (shouldShow === isVisible) continue; // already correct — no-op
+
+    const style   = window.getComputedStyle(card);
+    const marginT = parseFloat(style.marginTop) || 0;
+
+    if (!shouldShow) {
+      // Measure full height (incl. any expanded body) BEFORE collapsing
+      const totalH = card.offsetHeight + marginT;
+      // Collapse expanded body & sync closure state (instant, no animation)
+      if (id === 'effCard'       && window._resetEff)     window._resetEff();
+      if (id === 'weekChartCard' && window._resetWeek)    window._resetWeek();
+      if (id === 'projectCard'   && window._resetProject) window._resetProject();
+      if (id === 'heatmapCard'   && window._resetHeatmap) window._resetHeatmap();
+      card.style.display = 'none';
+      delta -= totalH;
+    } else {
+      // Re-enable: show card, ensure it starts collapsed
+      card.style.display = '';
+      if (id === 'effCard'       && window._resetEff)     window._resetEff();
+      if (id === 'weekChartCard' && window._resetWeek)    window._resetWeek();
+      if (id === 'projectCard'   && window._resetProject) window._resetProject();
+      if (id === 'heatmapCard'   && window._resetHeatmap) window._resetHeatmap();
+      // Reset cascade so it plays again when card becomes visible
+      if (id === 'effCard') { window._effReady = false; window._effZone = undefined; }
+      // Measure collapsed height after showing
+      const totalH = card.offsetHeight + marginT;
+      delta += totalH;
+    }
+  }
+
+  if (delta !== 0) {
+    const newH = (parseInt(app.style.height) || H_BASE) + delta;
+    app.style.height = newH + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action: 'resize', h: newH});
+  }
+}
+
+// ── Prompt Efficiency (leverage-based) ───────────────────────────────────────
 const EFF_ZONES  = ['Sharp','Focused','Moderate','Verbose','Scattered'];
 const EFF_COLORS = ['#52BAFF','#8882F0','#A87CF5','#D46090','#F26280'];
-const EFF_BOUNDS = [150, 350, 600, 900, Infinity];
+// Thresholds are minimum ratios per zone — higher ratio = better = lower zone index
+const EFF_BOUNDS = [0.30, 0.18, 0.10, 0.05, 0];
 
-function effZone(rate) {
+function effZone(ratio) {
   for (let i = 0; i < EFF_BOUNDS.length; i++)
-    if (rate <= EFF_BOUNDS[i]) return i;
+    if (ratio >= EFF_BOUNDS[i]) return i;
   return 4;
 }
 
@@ -1856,13 +2103,13 @@ function renderEfficiency(d) {
 
   const today = new Date().toISOString().slice(0, 10);
   let hist = {};
-  try { hist = JSON.parse(localStorage.getItem('effHist') || '{}'); } catch(e) {}
+  try { hist = JSON.parse(localStorage.getItem('effHistV2') || '{}'); } catch(e) {}
 
   if (rate !== null) {
     const prev = hist[today] || {avg: rate, n: 0};
     const n = prev.n + 1;
     hist[today] = {avg: (prev.avg * prev.n + rate) / n, n};
-    try { localStorage.setItem('effHist', JSON.stringify(hist)); } catch(e) {}
+    try { localStorage.setItem('effHistV2', JSON.stringify(hist)); } catch(e) {}
   }
 
   const todayRate = hist[today] ? hist[today].avg : null;
@@ -1931,8 +2178,8 @@ function renderEfficiency(d) {
   const metaEl = document.getElementById('effMeta');
   if (metaEl) {
     if (rate !== null) {
-      const minLabel = elMin < 2 ? '<2 min' : elMin + ' min';
-      metaEl.textContent = '~' + rate + ' tok/min  ·  ' + minLabel + ' of data';
+      const msgLabel = elMin <= 1 ? '1 message' : elMin + ' messages';
+      metaEl.textContent = rate.toFixed(2) + '× output/input  ·  ' + msgLabel;
     } else {
       metaEl.textContent = 'collecting data…';
     }
@@ -1953,13 +2200,176 @@ function renderEfficiency(d) {
   }
 }
 
+// ── (leverage card removed — efficiency card now uses output/input ratio) ─────
+function renderLeverage(d) {
+  const lev = d.leverage;
+  if (!lev) return;
+
+  const ratio  = lev.ratio;
+  const delta  = lev.delta;
+  const daily7 = lev.daily_7 || [];
+
+  // Number
+  const numEl = document.getElementById('levNum');
+  if (numEl) numEl.textContent = ratio !== null ? ratio.toFixed(2) + '×' : '--';
+
+  // Badge
+  const badgeEl = document.getElementById('levBadge');
+  if (badgeEl) {
+    let label = '--', cls = '';
+    if (ratio !== null) {
+      if      (ratio >= 0.20) { label = 'High';     cls = 'high';     }
+      else if (ratio >= 0.06) { label = 'Balanced'; cls = 'balanced'; }
+      else                    { label = 'Low';       cls = 'low';      }
+    }
+    badgeEl.textContent = label;
+    badgeEl.className = 'lev-badge' + (cls ? ' ' + cls : '');
+  }
+
+  // Delta
+  const deltaEl = document.getElementById('levDelta');
+  if (deltaEl) {
+    if (delta !== null && delta !== undefined) {
+      const sign = delta >= 0 ? '↑ +' : '↓ ';
+      deltaEl.textContent = sign + Math.abs(delta).toFixed(2) + ' vs last wk';
+      deltaEl.className = 'lev-delta ' + (delta >= 0 ? 'up' : 'down');
+    } else {
+      deltaEl.textContent = '';
+      deltaEl.className = 'lev-delta';
+    }
+  }
+
+  _renderLevSpark(daily7);
+}
+
+function _renderLevSpark(daily7) {
+  const svg      = document.getElementById('levSpark');
+  const labelsEl = document.getElementById('levSparkLabels');
+  if (!svg || !labelsEl) return;
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  labelsEl.innerHTML = '';
+
+  const W = 272, H = 52, PAD = 6;
+  const n = daily7.length;
+  if (!n) return;
+
+  const ns   = 'http://www.w3.org/2000/svg';
+  const vals = daily7.map(d => d.ratio).filter(v => v !== null && v !== undefined);
+
+  if (!vals.length) {
+    // No data yet — draw a quiet dashed baseline
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', PAD);   line.setAttribute('y1', H / 2);
+    line.setAttribute('x2', W-PAD); line.setAttribute('y2', H / 2);
+    line.setAttribute('stroke', 'rgba(255,255,255,0.12)');
+    line.setAttribute('stroke-width', '1');
+    line.setAttribute('stroke-dasharray', '3 4');
+    svg.appendChild(line);
+  } else {
+    const minV  = Math.max(0, Math.min(...vals) * 0.80);
+    const maxV  = Math.max(...vals) * 1.20 || 0.01;
+
+    // Centre each dot over its day-label column (matches the flex label layout exactly)
+    const toX = i => (i + 0.5) * W / n;
+    const toY = v => H - PAD - ((v - minV) / (maxV - minV)) * (H - PAD * 2);
+
+    // Gradient defs
+    const defs = document.createElementNS(ns, 'defs');
+    const grad = document.createElementNS(ns, 'linearGradient');
+    grad.setAttribute('id', 'levSparkGrad');
+    grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+    grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+    grad.setAttribute('x2', '0'); grad.setAttribute('y2', H);
+    const s1 = document.createElementNS(ns, 'stop');
+    s1.setAttribute('offset', '0%');   s1.setAttribute('stop-color', 'rgba(168,124,245,0.30)');
+    const s2 = document.createElementNS(ns, 'stop');
+    s2.setAttribute('offset', '100%'); s2.setAttribute('stop-color', 'rgba(168,124,245,0.00)');
+    grad.appendChild(s1); grad.appendChild(s2);
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+
+    // Collect all non-null points — connect them in one continuous path
+    // (null days simply have no dot; the line bridges across them)
+    const pts = daily7
+      .map((dv, i) => dv.ratio !== null && dv.ratio !== undefined
+        ? {x: toX(i), y: toY(dv.ratio), today: dv.today}
+        : null)
+      .filter(p => p !== null);
+
+    if (pts.length >= 1) {
+      // Area fill — close down to baseline
+      const aD = [`M ${pts[0].x.toFixed(1)} ${H}`];
+      pts.forEach(p => aD.push(`L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`));
+      aD.push(`L ${pts[pts.length-1].x.toFixed(1)} ${H} Z`);
+      const area = document.createElementNS(ns, 'path');
+      area.setAttribute('d', aD.join(' '));
+      area.setAttribute('fill', 'url(#levSparkGrad)');
+      svg.appendChild(area);
+
+      // Line
+      if (pts.length >= 2) {
+        const lD = [`M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`];
+        pts.slice(1).forEach(p => lD.push(`L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`));
+        const line = document.createElementNS(ns, 'path');
+        line.setAttribute('d', lD.join(' '));
+        line.setAttribute('fill', 'none');
+        line.setAttribute('stroke', 'rgba(168,124,245,0.80)');
+        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('stroke-linejoin', 'round');
+        svg.appendChild(line);
+      }
+    }
+
+    // Dots — filled for days with data, dim hollow for empty days
+    const midY = toY((minV + maxV) / 2);
+    daily7.forEach((dv, i) => {
+      const x = toX(i).toFixed(1);
+      const circle = document.createElementNS(ns, 'circle');
+      circle.setAttribute('cx', x);
+      if (dv.ratio !== null && dv.ratio !== undefined) {
+        const y = toY(dv.ratio).toFixed(1);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r',  dv.today ? '3.5' : '2.8');
+        circle.setAttribute('fill', dv.today ? '#A87CF5' : 'rgba(168,124,245,0.70)');
+        if (dv.today) {
+          circle.setAttribute('stroke', 'rgba(255,255,255,0.40)');
+          circle.setAttribute('stroke-width', '1.5');
+        }
+      } else {
+        // No data — small hollow dot on the midline
+        circle.setAttribute('cy', (H - PAD).toFixed(1));
+        circle.setAttribute('r',  '2');
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', 'rgba(255,255,255,0.15)');
+        circle.setAttribute('stroke-width', '1');
+      }
+      svg.appendChild(circle);
+    });
+  }
+
+  // Day labels
+  daily7.forEach(dv => {
+    const lbl = document.createElement('div');
+    lbl.className   = 'lev-spark-lbl' + (dv.today ? ' today' : '');
+    lbl.textContent = dv.day;
+    labelsEl.appendChild(lbl);
+  });
+}
+
 // ── 7-Day usage chart (segmented LED-style bars) ─────────────────────────────
 window._weekExpanded  = true;   // kept in sync by toggle IIFE
 window._weekChartReady = false; // animate once per open
 
 const N_SEGS = 10;
-// Segment colours: index 0 = bottom = red, index 9 = top = teal
-const SEG_COLORS = [
+// Segment colours: index 0 = bottom, index 9 = top
+const SEG_COLORS_AURORA = [
+  '#52BAFF','#6EB0F7','#7A8DF0','#8E80F0',
+  '#A87CF5','#B876E0','#C470C0','#C46490',
+  '#E05078','#F26280'
+];
+const SEG_COLORS_CARBON = [
   '#FF6B6B','#FF7C5C','#FF9045','#FFA830',
   '#FFC857','#D4C96A','#7ECBA4','#45C4B8',
   '#36C5C5','#4ECDC4'
@@ -1967,13 +2377,19 @@ const SEG_COLORS = [
 
 function animateWeekBars() {
   const cols = document.querySelectorAll('#weekChart .week-bar-col');
+  // Collect all segments in column-major, bottom-to-top order
+  const allSegs = [];
   cols.forEach((col, ci) => {
-    // .won segs are in DOM order top→bottom; reverse to animate bottom→top
     const active = [...col.querySelectorAll('.wseg.won')].reverse();
-    active.forEach((seg, si) => {
-      seg.style.opacity = '0';
-      setTimeout(() => { seg.style.opacity = '1'; }, ci * 48 + si * 20);
-    });
+    allSegs.push(...active);
+  });
+  if (!allSegs.length) return;
+  anime({
+    targets: allSegs,
+    opacity: [0, 1],
+    duration: 320,
+    delay: anime.stagger(28, { easing: 'easeOutQuad' }),
+    easing: 'easeOutCubic'
   });
 }
 
@@ -1983,12 +2399,15 @@ function renderWeekChart(daily7) {
   const labelsEl = document.getElementById('weekLabels');
   if (!chart || !labelsEl) return;
 
-  const max     = Math.max(...daily7.map(d => d.tokens), 1);
+  // Fixed absolute scale: WEEK_LIMIT ÷ 7 = full bar.
+  // A full bar = you used your entire daily share of the weekly budget.
+  const DAILY_SCALE = 179_000_000 / 7;  // ≈ 25.6M tokens
   chart.innerHTML = ''; labelsEl.innerHTML = '';
 
+  const SEG_COLORS = isCarbon() ? SEG_COLORS_CARBON : SEG_COLORS_AURORA;
   daily7.forEach((d, ci) => {
     const isToday  = !!d.today;
-    const active   = d.tokens > 0 ? Math.max(1, Math.round(d.tokens / max * N_SEGS)) : 0;
+    const active   = d.tokens > 0 ? Math.min(N_SEGS, Math.max(1, Math.round(d.tokens / DAILY_SCALE * N_SEGS))) : 0;
     const willAnim = window._weekExpanded && !window._weekChartReady;
 
     const col = document.createElement('div');
@@ -2020,6 +2439,119 @@ function renderWeekChart(daily7) {
     if (sh) { sh.classList.remove('run'); void sh.offsetWidth; sh.classList.add('run'); }
     animateWeekBars();
   }
+}
+
+// ── Project Breakdown ─────────────────────────────────────────────────────────
+window._projMode = 'session';
+
+function renderProjectBreakdown(d) {
+  if (!d.projects) return;
+  const rowsEl  = document.getElementById('projRows');
+  const emptyEl = document.getElementById('projEmpty');
+  if (!rowsEl) return;
+
+  const data = d.projects[window._projMode] || [];
+  rowsEl.innerHTML = '';
+  if (emptyEl) emptyEl.style.display = data.length ? 'none' : 'block';
+
+  const COLORS = isCarbon()
+    ? ['#AAD7FE','#ECB967','#FF654D']
+    : ['#52BAFF','#A87CF5','#F26280'];
+  data.forEach((proj, i) => {
+    const row = document.createElement('div');
+    row.className = 'proj-row';
+    row.innerHTML =
+      `<span class="proj-name" title="${proj.name}">${proj.name}</span>` +
+      `<div class="proj-bar-wrap"><div class="proj-bar" data-pct="${proj.pct}"` +
+      ` style="background:${COLORS[i % COLORS.length]}"></div></div>` +
+      `<span class="proj-val">${fmt(proj.tokens)}</span>` +
+      `<span class="proj-pct">${Math.round(proj.pct)}%</span>`;
+    rowsEl.appendChild(row);
+  });
+  // Animate bars with anime.js spring, then snap height
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const bars = [...rowsEl.querySelectorAll('.proj-bar')];
+    bars.forEach(b => { b.style.width = '0%'; });
+    anime({
+      targets: bars,
+      width: (el) => (el.dataset.pct || 0) + '%',
+      duration: 700,
+      delay: anime.stagger(80),
+      easing: 'spring(1, 80, 12, 0)',
+      complete: () => { if (window._updateProjH) window._updateProjH(); }
+    });
+    if (window._updateProjH) window._updateProjH();
+  }));
+}
+
+// ── Hourly Heatmap ─────────────────────────────────────────────────────────────
+function renderHeatmap(d) {
+  if (!d.heatmap) return;
+  const gridEl = document.getElementById('heatmapGrid');
+  const axisEl = document.getElementById('heatmapAxis');
+  if (!gridEl) return;
+
+  gridEl.innerHTML = '';
+
+  const grid   = d.heatmap; // 7×24 matrix
+  const maxVal = Math.max(...grid.flat(), 1);
+  const vivid  = isCarbon();
+  const DOW    = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  grid.forEach((row, di) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'heatmap-row';
+
+    const lbl = document.createElement('span');
+    lbl.className   = 'heatmap-dow';
+    lbl.textContent = DOW[di];
+    rowEl.appendChild(lbl);
+
+    const cellsEl = document.createElement('div');
+    cellsEl.className = 'heatmap-cells';
+
+    row.forEach((val, hi) => {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      if (val > 0) {
+        const intensity = val / maxVal;
+        const alpha = Math.max(0.12, Math.min(1.0, intensity * 0.88 + 0.12));
+        if (vivid) {
+          // Carbon mode — warm amber
+          cell.style.background = `rgba(255,184,0,${(alpha * 0.9).toFixed(2)})`;
+        } else {
+          // Default — blue→violet sweep across hours
+          const t = hi / 23;
+          const r = Math.round(82  + (168 - 82)  * t);
+          const g = Math.round(186 + (124 - 186) * t);
+          const b = Math.round(255 + (245 - 255) * t);
+          cell.style.background = `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
+        }
+        const dayName = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][di];
+        const hr = hi % 12 || 12;
+        const ap = hi < 12 ? 'AM' : 'PM';
+        cell.title = `${dayName} ${hr}${ap} — ${fmt(val)} tokens`;
+      }
+      cellsEl.appendChild(cell);
+    });
+
+    rowEl.appendChild(cellsEl);
+    gridEl.appendChild(rowEl);
+  });
+
+  // Hour-axis labels: 12A, 6A, 12P, 6P
+  if (axisEl) {
+    axisEl.innerHTML = '';
+    [{h:0,t:'12A'},{h:6,t:'6A'},{h:12,t:'12P'},{h:18,t:'6P'}].forEach(({h,t}) => {
+      const lbl = document.createElement('span');
+      lbl.className   = 'heatmap-axis-lbl';
+      lbl.textContent = t;
+      lbl.style.left  = (h / 24 * 100) + '%';
+      axisEl.appendChild(lbl);
+    });
+  }
+
+  if (window._updateHeatmapH) window._updateHeatmapH();
 }
 
 // ── Countdowns ──
@@ -2090,6 +2622,12 @@ document.getElementById('themeToggle').addEventListener('click', () => {
         if (fe) { fe.classList.remove('arc-glow'); fe.style.strokeDasharray = ''; }
         _carbonArcEntry(pct, () => { _setCarbonPulse(pct); });
         setTimeout(() => _animateNeedle(pct), 500);
+        // Re-render data modules with Carbon palette
+        if (window._d) {
+          if (window._d.daily_7) renderWeekChart(window._d.daily_7);
+          renderProjectBreakdown(window._d);
+          renderHeatmap(window._d);
+        }
       } else {
         // Switching to Default: clear carbon pulse classes, animate gradient fill in
         ['arcLow','arcMed','arcHigh'].forEach(id => {
@@ -2153,8 +2691,8 @@ document.getElementById('obCta').addEventListener('click', () => {
 });
 
 // ── Shared height constants (used by cookie form + efficiency toggle) ──
-const H_BASE   = 653;   // base: trimmed footer (-12px)
-const H_COOKIE = 723;   // H_BASE + 70 for cookie form
+const H_BASE   = 593;   // efficiency collapsed by default
+const H_COOKIE = 663;   // H_BASE + 70 for cookie form
 
 // Ensure getAppH() always has a reliable baseline
 document.getElementById('app').style.height = H_BASE + 'px';
@@ -2179,12 +2717,15 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   const status = document.getElementById('cookieStatus');
   const app    = document.getElementById('app');
 
+  const FORM_DELTA = H_COOKIE - H_BASE;  // height added by the cookie form (70px)
+
   function openForm() {
     form.classList.add('open');
-    toggle.classList.remove('active');   // button returns to resting state when form opens
-    input.classList.remove('cookie-typed');  // reset typed state so amber border shows
-    app.style.height = H_COOKIE + 'px';
-    window.webkit.messageHandlers.cm.postMessage({action:'resize', h: H_COOKIE});
+    toggle.classList.remove('active');
+    input.classList.remove('cookie-typed');
+    const newH = (parseInt(app.style.height) || H_BASE) + FORM_DELTA;
+    app.style.height = newH + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action:'resize', h: newH});
     setTimeout(() => input.focus(), 240);
   }
 
@@ -2193,8 +2734,9 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
     toggle.classList.remove('active');
     input.classList.remove('cookie-typed');
     input.classList.remove('ob-highlight');
-    app.style.height = H_BASE + 'px';
-    window.webkit.messageHandlers.cm.postMessage({action:'resize', h: H_BASE});
+    const newH = (parseInt(app.style.height) || H_BASE) - FORM_DELTA;
+    app.style.height = newH + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action:'resize', h: newH});
     input.value = ''; status.textContent = ''; status.className = 'cookie-status';
   }
 
@@ -2233,6 +2775,22 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   };
 })();
 
+// ── Shared: close all tooltips/panels ──
+window._closeAllTips = function(except) {
+  if (except !== 'cookieWarn') {
+    const t = document.getElementById('cookieWarnTip');
+    if (t) t.classList.remove('open');
+  }
+  if (except !== 'effTooltip') {
+    const t = document.getElementById('effTooltip');
+    if (t) t.classList.remove('visible');
+  }
+  if (except !== 'infoPanel') {
+    const t = document.getElementById('infoPanel');
+    if (t) t.classList.remove('open');
+  }
+};
+
 // ── Cookie expiry warning tooltip ──
 (function() {
   const warn = document.getElementById('cookieWarn');
@@ -2240,6 +2798,8 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   if (!warn || !tip) return;
   warn.addEventListener('click', (e) => {
     e.stopPropagation();
+    const opening = !tip.classList.contains('open');
+    if (opening) window._closeAllTips('cookieWarn');
     tip.classList.toggle('open');
   });
   document.getElementById('app').addEventListener('click', (e) => {
@@ -2258,7 +2818,6 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   function positionTip() {
     const r    = btn.getBoundingClientRect();
     const tipW = 200, margin = 8;
-    // tooltip is position:fixed opacity:0 (not display:none) so offsetHeight is valid
     const tipH = tip.offsetHeight || 160;
     let left = r.left;
     if (left + tipW > window.innerWidth - margin) left = window.innerWidth - tipW - margin;
@@ -2269,7 +2828,7 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const opening = !tip.classList.contains('visible');
-    if (opening) positionTip();
+    if (opening) { window._closeAllTips('effTooltip'); positionTip(); }
     tip.classList.toggle('visible');
   });
 
@@ -2288,8 +2847,8 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   const app    = document.getElementById('app');
   if (!body || !toggle) return;
 
-  let expanded = true;
-  try { expanded = localStorage.getItem('effOpen') !== '0'; } catch(e) {}
+  let expanded = false;
+  try { expanded = localStorage.getItem('effOpen') === '1'; } catch(e) {}
 
   function getAppH() { return parseInt(app.style.height) || H_BASE; }
   function sendResize(h) {
@@ -2335,6 +2894,20 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   } else {
     toggle.addEventListener('click', doToggle);
   }
+
+  // Expose reset so applyModules can collapse & sync closure state
+  window._resetEff = function() {
+    if (!expanded) return;
+    expanded = false;
+    try { localStorage.setItem('effOpen', '0'); } catch(e) {}
+    body.style.transition = 'none';
+    body.style.maxHeight  = '0px';
+    body.classList.add('shut'); body.classList.remove('open');
+    body.style.paddingTop = '0';
+    toggle.classList.remove('open');
+    void body.offsetHeight; // force synchronous reflow
+    body.style.transition = '';
+  };
 })();
 
 // ── 7-Day chart expand / collapse ──
@@ -2400,6 +2973,239 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
   } else {
     toggle.addEventListener('click', doToggle);
   }
+
+  // Expose reset so applyModules can collapse & sync closure state
+  window._resetWeek = function() {
+    if (!expanded) return;
+    expanded = false;
+    window._weekExpanded = false;
+    try { localStorage.setItem('weekChartOpen', '0'); } catch(e) {}
+    body.style.transition = 'none';
+    body.style.maxHeight  = '0px';
+    body.classList.add('shut'); body.classList.remove('open');
+    body.style.paddingTop = '0';
+    toggle.classList.remove('open');
+    void body.offsetHeight;
+    body.style.transition = '';
+  };
+})();
+
+// ── Project Breakdown expand / collapse ──
+(function() {
+  const body   = document.getElementById('projBody');
+  const toggle = document.getElementById('projToggle');
+  const hdr    = document.getElementById('projHdr');
+  const app    = document.getElementById('app');
+  if (!body || !toggle) return;
+
+  let expanded = false;
+  try { expanded = localStorage.getItem('projOpen') === '1'; } catch(e) {}
+
+  // Body content is dynamic; don't pre-measure — measure at toggle time
+  body.style.maxHeight = expanded ? '500px' : '0px';
+  body.classList.add(expanded ? 'open' : 'shut');
+  if (!expanded) body.style.paddingTop = '0';
+  toggle.classList.toggle('open', expanded);
+
+  function getAppH() { return parseInt(app.style.height) || H_BASE; }
+  function sendResize(h) {
+    app.style.height = h + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action:'resize', h});
+  }
+
+  function doToggle() {
+    expanded = !expanded;
+    try { localStorage.setItem('projOpen', expanded ? '1' : '0'); } catch(e) {}
+    if (expanded) {
+      body.style.paddingTop = '';
+      // Measure actual content height
+      const fullH = body.scrollHeight;
+      body.style.maxHeight = fullH + 'px';
+      body.classList.remove('shut'); body.classList.add('open');
+      const sh = document.getElementById('projShimmer');
+      if (sh) { sh.classList.remove('run'); void sh.offsetWidth; sh.classList.add('run'); }
+      setTimeout(() => sendResize(getAppH() + fullH), 10);
+    } else {
+      const fullH = parseInt(body.style.maxHeight) || body.scrollHeight;
+      body.style.maxHeight = '0px';
+      body.classList.add('shut'); body.classList.remove('open');
+      setTimeout(() => sendResize(getAppH() - fullH), 10);
+    }
+    toggle.classList.toggle('open', expanded);
+  }
+
+  if (hdr) hdr.addEventListener('click', doToggle);
+  else     toggle.addEventListener('click', doToggle);
+
+  // After rendering new bars, update maxHeight + popover height if currently expanded
+  window._updateProjH = function() {
+    if (!expanded) return;
+    const oldH = parseInt(body.style.maxHeight) || 0;
+    const newH = body.scrollHeight;
+    if (newH === oldH) return;
+    body.style.maxHeight = newH + 'px';
+    sendResize(getAppH() + (newH - oldH));
+  };
+
+  // Collapse & sync closure for applyModules
+  window._resetProject = function() {
+    if (!expanded) return;
+    const fullH = parseInt(body.style.maxHeight) || body.scrollHeight;
+    expanded = false;
+    try { localStorage.setItem('projOpen', '0'); } catch(e) {}
+    body.style.transition = 'none';
+    body.style.maxHeight  = '0px';
+    body.classList.add('shut'); body.classList.remove('open');
+    body.style.paddingTop = '0';
+    toggle.classList.remove('open');
+    void body.offsetHeight;
+    body.style.transition = '';
+  };
+
+  // Tab switching: Session / Week
+  ['projTabSess', 'projTabWeek'].forEach(id => {
+    const tab = document.getElementById(id);
+    if (!tab) return;
+    tab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window._projMode = tab.dataset.mode;
+      document.querySelectorAll('.proj-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      if (window._d) renderProjectBreakdown(window._d);
+    });
+  });
+})();
+
+// ── Hourly Heatmap expand / collapse ──
+(function() {
+  const body   = document.getElementById('heatmapBody');
+  const toggle = document.getElementById('heatmapToggle');
+  const hdr    = document.getElementById('heatmapHdr');
+  const app    = document.getElementById('app');
+  if (!body || !toggle) return;
+
+  let expanded = false;
+  try { expanded = localStorage.getItem('heatmapOpen') === '1'; } catch(e) {}
+
+  // Heatmap grid renders dynamically; use a safe initial guess
+  const HEATMAP_EST = 106; // 10 + 68 grid + 4 gap + 13 axis + 11 rounding
+  body.style.maxHeight = expanded ? HEATMAP_EST + 'px' : '0px';
+  body.classList.add(expanded ? 'open' : 'shut');
+  if (!expanded) body.style.paddingTop = '0';
+  toggle.classList.toggle('open', expanded);
+
+  function getAppH() { return parseInt(app.style.height) || H_BASE; }
+  function sendResize(h) {
+    app.style.height = h + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action:'resize', h});
+  }
+
+  function doToggle() {
+    expanded = !expanded;
+    try { localStorage.setItem('heatmapOpen', expanded ? '1' : '0'); } catch(e) {}
+    if (expanded) {
+      body.style.paddingTop = '';
+      const fullH = body.scrollHeight || HEATMAP_EST;
+      body.style.maxHeight = fullH + 'px';
+      body.classList.remove('shut'); body.classList.add('open');
+      const sh = document.getElementById('heatmapShimmer');
+      if (sh) { sh.classList.remove('run'); void sh.offsetWidth; sh.classList.add('run'); }
+      setTimeout(() => sendResize(getAppH() + fullH), 10);
+    } else {
+      const fullH = parseInt(body.style.maxHeight) || HEATMAP_EST;
+      body.style.maxHeight = '0px';
+      body.classList.add('shut'); body.classList.remove('open');
+      setTimeout(() => sendResize(getAppH() - fullH), 10);
+    }
+    toggle.classList.toggle('open', expanded);
+  }
+
+  if (hdr) hdr.addEventListener('click', doToggle);
+  else     toggle.addEventListener('click', doToggle);
+
+  // Snap maxHeight to actual rendered content after first render
+  window._updateHeatmapH = function() {
+    if (!expanded) return;
+    const oldH = parseInt(body.style.maxHeight) || 0;
+    const newH = body.scrollHeight || HEATMAP_EST;
+    if (newH === oldH) return;
+    body.style.maxHeight = newH + 'px';
+    sendResize(getAppH() + (newH - oldH));
+  };
+
+  window._resetHeatmap = function() {
+    if (!expanded) return;
+    expanded = false;
+    try { localStorage.setItem('heatmapOpen', '0'); } catch(e) {}
+    body.style.transition = 'none';
+    body.style.maxHeight  = '0px';
+    body.classList.add('shut'); body.classList.remove('open');
+    body.style.paddingTop = '0';
+    toggle.classList.remove('open');
+    void body.offsetHeight;
+    body.style.transition = '';
+  };
+})();
+
+// ── Leverage sparkline expand / collapse ──
+(function() {
+  const body   = document.getElementById('levSparkBody');
+  const toggle = document.getElementById('levToggle');
+  const hdr    = document.getElementById('levHdr');
+  const app    = document.getElementById('app');
+  if (!body || !toggle) return;
+
+  let expanded = false;
+  try { expanded = localStorage.getItem('levSparkOpen') === '1'; } catch(e) {}
+
+  function getAppH() { return parseInt(app.style.height) || H_BASE; }
+  function sendResize(h) {
+    app.style.height = h + 'px';
+    window.webkit.messageHandlers.cm.postMessage({action:'resize', h});
+  }
+
+  // SVG is empty at page-load time, so scrollHeight may under-count.
+  // Use a fixed known height: 10px padding + 52px SVG + 5px gap + 18px labels = 85px
+  body.style.maxHeight = 'none';
+  const fullH = Math.max(85, body.scrollHeight);
+
+  body.style.maxHeight = expanded ? fullH + 'px' : '0px';
+  body.classList.add(expanded ? 'open' : 'shut');
+  if (!expanded) body.style.paddingTop = '0';
+  toggle.classList.toggle('open', expanded);
+
+  if (expanded) {
+    const initH = H_BASE + fullH;
+    app.style.height = initH + 'px';
+    setTimeout(() =>
+      window.webkit.messageHandlers.cm.postMessage({action:'resize', h: initH}), 0);
+  }
+
+  function doToggle() {
+    expanded = !expanded;
+    try { localStorage.setItem('levSparkOpen', expanded ? '1' : '0'); } catch(e) {}
+
+    if (expanded) {
+      body.style.paddingTop = '';
+      body.style.maxHeight  = fullH + 'px';
+      body.classList.remove('shut'); body.classList.add('open');
+      const sh = document.getElementById('levShimmer');
+      if (sh) { sh.classList.remove('run'); void sh.offsetWidth; sh.classList.add('run'); }
+    } else {
+      body.style.maxHeight = '0px';
+      body.classList.add('shut'); body.classList.remove('open');
+    }
+    toggle.classList.toggle('open', expanded);
+
+    const newH = getAppH() + (expanded ? fullH : -fullH);
+    setTimeout(() => sendResize(newH), 10);
+  }
+
+  if (hdr) {
+    hdr.addEventListener('click', doToggle);
+  } else {
+    toggle.addEventListener('click', doToggle);
+  }
 })();
 
 // ── Info panel ──
@@ -2410,6 +3216,8 @@ document.getElementById('expiredUpdateBtn').addEventListener('click', () => {
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
+    const opening = !panel.classList.contains('open');
+    if (opening) window._closeAllTips('infoPanel');
     panel.classList.toggle('open');
   });
   close.addEventListener('click', () => panel.classList.remove('open'));
@@ -2512,12 +3320,9 @@ class AppDelegate(NSObject):
             NSApplicationActivationPolicyAccessory
         )
         self.settings     = load_settings()
-        self._last_update      = None
-        self._timer            = None
-        self._payload          = None
-        self._eff_samples      = []
-        self._eff_prev_tokens  = None
-        self._eff_prev_time    = None
+        self._last_update = None
+        self._timer       = None
+        self._payload     = None
 
         bar = NSStatusBar.systemStatusBar()
         self.item = bar.statusItemWithLength_(NSVariableStatusItemLength)
@@ -2527,6 +3332,65 @@ class AppDelegate(NSObject):
         # Receive both left and right mouse-up events in the action
         btn.sendActionOn_(4 | 16)   # NSEventMaskLeftMouseUp | NSEventMaskRightMouseUp
         self._setTitle("--%")
+
+        # ── Pre-bake horizontally-flipped powermeter bitmaps (colour baked in) ──
+        self._flipped_orange = None
+        self._flipped_red    = None
+
+        # Pre-bake flipped powermeter bitmaps with colour baked in via DestinationIn compositing
+        self._flipped_orange = None
+        self._flipped_red    = None
+
+        def _bake_flipped(color):
+            try:
+                from AppKit import (NSImageSymbolConfiguration, NSGraphicsContext,
+                                    NSAffineTransform, NSBitmapImageRep, NSRectFill)
+                src = NSImage.imageWithSystemSymbolName_accessibilityDescription_(
+                    "powermeter", None)
+                if src is None:
+                    return None
+                cfg = NSImageSymbolConfiguration.configurationWithPointSize_weight_scale_(
+                    18.0, 0.4, 2)
+                src = src.imageWithSymbolConfiguration_(cfg)
+                src.setSize_(NSMakeSize(18, 18))
+
+                # 36×36 pixel bitmap (≈@2x for 18pt)
+                rep = NSBitmapImageRep.alloc() \
+                    .initWithBitmapDataPlanes_pixelsWide_pixelsHigh_bitsPerSample_samplesPerPixel_hasAlpha_isPlanar_colorSpaceName_bytesPerRow_bitsPerPixel_(
+                        None, 36, 36, 8, 4, True, False, "NSDeviceRGBColorSpace", 0, 0)
+                gctx = NSGraphicsContext.graphicsContextWithBitmapImageRep_(rep)
+                NSGraphicsContext.saveGraphicsState()
+                NSGraphicsContext.setCurrentContext_(gctx)
+
+                # Step 1: fill entire bitmap with target colour (NSRectFill respects color.set())
+                color.set()
+                NSRectFill(NSMakeRect(0, 0, 36, 36))
+
+                # Step 2: draw flipped symbol using DestinationIn (7) — masks colour to symbol alpha
+                xf = NSAffineTransform.transform()
+                xf.translateXBy_yBy_(36.0, 0.0)   # full pixel width
+                xf.scaleXBy_yBy_(-1.0, 1.0)
+                xf.concat()
+                src.drawInRect_fromRect_operation_fraction_(
+                    NSMakeRect(0, 0, 36, 36),       # full pixel rect
+                    NSMakeRect(0, 0, 0, 0),
+                    7,   # NSCompositingOperationDestinationIn — keep dst where src has alpha
+                    1.0
+                )
+                NSGraphicsContext.restoreGraphicsState()
+
+                out = NSImage.alloc().initWithSize_(NSMakeSize(18, 18))
+                out.addRepresentation_(rep)
+                out.setTemplate_(False)  # colour is already baked in
+                return out
+            except Exception as e:
+                print(f"[meter] _bake_flipped failed: {e}", flush=True)
+                return None
+
+        self._flipped_orange = _bake_flipped(NSColor.systemOrangeColor())
+        self._flipped_red    = _bake_flipped(
+            NSColor.colorWithSRGBRed_green_blue_alpha_(1.0, 0.396, 0.302, 1.0))
+        print(f"[meter] flipped bitmaps: orange={bool(self._flipped_orange)} red={bool(self._flipped_red)}", flush=True)
 
         self._vc = PopoverVC.alloc().init()
         self._vc._msgHandler.delegate = self
@@ -2567,40 +3431,21 @@ class AppDelegate(NSObject):
         threading.Thread(target=worker, daemon=True).start()
 
     @objc.python_method
-    def _calcEffRate(self, session_tokens, session_start_ms=None):
-        import time as _time
-        now = datetime.now()
-        if (self._eff_prev_tokens is not None and
-                self._eff_prev_time is not None):
-            delta_tok = max(0, session_tokens - self._eff_prev_tokens)
-            delta_min = (now - self._eff_prev_time).total_seconds() / 60.0
-            if session_tokens < self._eff_prev_tokens * 0.5:
-                self._eff_samples = []          # session reset detected
-            elif delta_min >= 0.5:
-                self._eff_samples.append(round(delta_tok / delta_min))
-                if len(self._eff_samples) > 30:
-                    self._eff_samples = self._eff_samples[-30:]
-        self._eff_prev_tokens = session_tokens
-        self._eff_prev_time   = now
-        if not self._eff_samples:
-            # Bootstrap from total session tokens ÷ session age
-            if session_start_ms and session_tokens > 0:
-                elapsed_min = (_time.time() * 1000 - session_start_ms) / 60000.0
-                if elapsed_min >= 5:
-                    return round(session_tokens / elapsed_min), round(elapsed_min)
-            return None, 0
-        avg = round(sum(self._eff_samples) / len(self._eff_samples))
-        iv  = self.settings.get("interval", 300)
-        return avg, round(len(self._eff_samples) * iv / 60)
+    def _buildModulesDict(self):
+        return {
+            "eff":     self.settings.get("module_eff",     True),
+            "week":    self.settings.get("module_week",    True),
+            "project": self.settings.get("module_project", False),
+            "heatmap": self.settings.get("module_heatmap", False),
+        }
 
     @objc.python_method
     def _applyPayload(self, p):
-        session_tokens_eff = p.get("session_tokens", 0)
-        if session_tokens_eff == 0 and p.get("session_pct", 0) > 0:
-            session_tokens_eff = round(p["session_pct"] / 100.0 * SESSION_LIMIT)
-        session_start_ms = p.get("session_reset_epoch", 0) - 5 * 3600 * 1000
-        eff_rate, eff_min = self._calcEffRate(session_tokens_eff, session_start_ms)
-        p = dict(p, eff_rate=eff_rate, eff_min=eff_min)
+        # Leverage ratio from meter_core feeds the efficiency display
+        eff_rate = p.get("lev_ratio")          # output / input ratio (float | None)
+        eff_min  = p.get("lev_count", 0)       # message count in session
+        p = dict(p, eff_rate=eff_rate, eff_min=eff_min,
+                 modules=self._buildModulesDict())
         self._payload = p
         pct   = p["session_pct"]
         title = f"{int(pct)}%"
@@ -2626,42 +3471,56 @@ class AppDelegate(NSObject):
         except ValueError:
             pct_val = -1
 
-        if pct_val >= 75:
+        if pct_val >= 90:
+            # Carbon danger red — #FF654D
+            icon_color = NSColor.colorWithSRGBRed_green_blue_alpha_(1.0, 0.396, 0.302, 1.0)
+        elif pct_val >= 75:
             icon_color = NSColor.systemOrangeColor()
         else:
             icon_color = NSColor.labelColor()
 
         from AppKit import NSTextAttachment, NSMutableAttributedString
 
-        img = NSImage.imageWithSystemSymbolName_accessibilityDescription_(
-            "powermeter", None
-        )
+        # Pick image: pre-baked colour bitmap at ≥75%, live SF Symbol otherwise
+        _fo = getattr(self, '_flipped_orange', None)
+        _fr = getattr(self, '_flipped_red',    None)
+        if pct_val >= 90 and _fr:
+            img, use_flipped = _fr, True
+        elif pct_val >= 75 and _fo:
+            img, use_flipped = _fo, True
+        else:
+            img         = NSImage.imageWithSystemSymbolName_accessibilityDescription_(
+                              "powermeter", None)
+            use_flipped = False
+
         result = NSMutableAttributedString.alloc().init()
 
         if img is not None:
-            # Bold symbol via symbol configuration (weight = NSFontWeightBold = 0.4)
-            try:
-                from AppKit import NSImageSymbolConfiguration
-                cfg = NSImageSymbolConfiguration.configurationWithPointSize_weight_scale_(
-                    18.0, 0.4, 2)
-                img = img.imageWithSymbolConfiguration_(cfg)
-            except Exception:
-                pass
-            img = img.copy()
-            img.setSize_(NSMakeSize(18, 18))
-            img.setTemplate_(True)
+            if not use_flipped:
+                # Live SF Symbol — apply bold config and template
+                try:
+                    from AppKit import NSImageSymbolConfiguration
+                    cfg = NSImageSymbolConfiguration.configurationWithPointSize_weight_scale_(
+                        18.0, 0.4, 2)
+                    img = img.imageWithSymbolConfiguration_(cfg)
+                except Exception:
+                    pass
+                img = img.copy()
+                img.setSize_(NSMakeSize(18, 18))
+                img.setTemplate_(True)
 
             att = NSTextAttachment.alloc().init()
             att.setImage_(img)
             att.setBounds_(NSMakeRect(0, -3.5, 18, 18))
-            # Build icon span and color it
             icon_as = NSMutableAttributedString.alloc().initWithAttributedString_(
                 NSAttributedString.attributedStringWithAttachment_(att)
             )
-            icon_as.addAttribute_value_range_(
-                NSForegroundColorAttributeName, icon_color,
-                NSMakeRange(0, icon_as.length())
-            )
+            if not use_flipped:
+                # Live SF Symbol template — apply foreground colour attribute
+                icon_as.addAttribute_value_range_(
+                    NSForegroundColorAttributeName, icon_color,
+                    NSMakeRange(0, icon_as.length())
+                )
             result.appendAttributedString_(icon_as)
             # Thin gap — one narrow space
             result.appendAttributedString_(
@@ -2710,38 +3569,100 @@ class AppDelegate(NSObject):
 
     @objc.python_method
     def _showContextMenu(self):
+        # Tag map:  10=Dark  11=Light
+        #           20=Eff  21=Week  22=Project  23=Heatmap
+        #           99=Quit
         menu = NSMenu.alloc().init()
         menu.setAutoenablesItems_(False)
+        act  = objc.selector(self.menuAction_, signature=b"v@:@")
 
-        appearItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            "Appearance",
-            objc.selector(self._menuToggleTheme_, signature=b"v@:@"),
-            ""
-        )
-        appearItem.setTarget_(self)
-        appearItem.setEnabled_(True)
+        # ── Appearance submenu ────────────────────────────────────────────────
+        appearItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Appearance", None, "")
+        appearMenu = NSMenu.alloc().initWithTitle_("Appearance")
+        appearMenu.setAutoenablesItems_(False)
+        cur_theme  = self.settings.get("theme", "dark")
+        for label, tag, active in [
+            ("Dark Mode",  10, cur_theme == "dark"),
+            ("Light Mode", 11, cur_theme == "light"),
+        ]:
+            it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(label, act, "")
+            it.setTarget_(self); it.setEnabled_(True)
+            it.setTag_(tag); it.setState_(1 if active else 0)
+            appearMenu.addItem_(it)
+        appearItem.setSubmenu_(appearMenu)
         menu.addItem_(appearItem)
+
+        # ── Modules submenu ───────────────────────────────────────────────────
+        modulesItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Modules", None, "")
+        modulesMenu = NSMenu.alloc().initWithTitle_("Modules")
+        modulesMenu.setAutoenablesItems_(False)
+        for label, tag, key, default in [
+            ("Prompt Efficiency", 20, "module_eff",  True),
+            ("7-Day Usage",       21, "module_week", True),
+        ]:
+            it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(label, act, "")
+            it.setTarget_(self); it.setEnabled_(True)
+            it.setTag_(tag); it.setState_(1 if self.settings.get(key, default) else 0)
+            modulesMenu.addItem_(it)
+        modulesMenu.addItem_(NSMenuItem.separatorItem())
+        for label, tag, key, default in [
+            ("Project Breakdown", 22, "module_project", False),
+            ("Hourly Heatmap",    23, "module_heatmap", False),
+        ]:
+            it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(label, act, "")
+            it.setTarget_(self); it.setEnabled_(True)
+            it.setTag_(tag); it.setState_(1 if self.settings.get(key, default) else 0)
+            modulesMenu.addItem_(it)
+        modulesItem.setSubmenu_(modulesMenu)
+        menu.addItem_(modulesItem)
 
         menu.addItem_(NSMenuItem.separatorItem())
 
-        removeItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            "Remove",
-            objc.selector(self._menuRemove_, signature=b"v@:@"),
-            ""
-        )
-        removeItem.setTarget_(self)
-        removeItem.setEnabled_(True)
-        menu.addItem_(removeItem)
+        it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Quit", act, "")
+        it.setTarget_(self); it.setEnabled_(True); it.setTag_(99)
+        menu.addItem_(it)
 
         event = NSApplication.sharedApplication().currentEvent()
         NSMenu.popUpContextMenu_withEvent_forView_(menu, event, self.item.button())
 
-    def _menuToggleTheme_(self, sender):
-        new_theme = "light" if self.settings.get("theme", "dark") == "dark" else "dark"
-        self.setTheme_(new_theme)
+    # Single ObjC-visible action routed by tag — avoids all selector-name issues
+    def menuAction_(self, sender):
+        tag = int(sender.tag())
+        if tag == 99:
+            NSApplication.sharedApplication().terminate_(None)
+            return
+        if tag in (10, 11):
+            theme = "dark" if tag == 10 else "light"
+            self.settings["theme"] = theme
+            save_settings(self.settings)
+            # Apply immediately whether or not the popover is open
+            if self._payload:
+                self._payload = dict(self._payload, theme=theme)
+                if self._popover.isShown():
+                    self._injectData(self._payload)
+            return
+        # Module toggles
+        _MODULE_MAP = {
+            20: ("module_eff",     True),
+            21: ("module_week",    True),
+            22: ("module_project", False),
+            23: ("module_heatmap", False),
+        }
+        if tag in _MODULE_MAP:
+            key, default = _MODULE_MAP[tag]
+            new_val = not self.settings.get(key, default)
+            self.settings[key] = new_val
+            save_settings(self.settings)
+            if self._payload:
+                self._payload = dict(self._payload, modules=self._buildModulesDict())
+                if self._popover.isShown():
+                    self._injectData(self._payload)
+            if new_val and key in ("module_project", "module_heatmap"):
+                self._doRefresh()
 
-    def _menuRemove_(self, sender):
+    def _menuQuit_(self, sender):
         NSApplication.sharedApplication().terminate_(None)
+
 
     def setInterval_(self, iv):
         self.settings["interval"] = int(iv)

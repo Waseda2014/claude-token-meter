@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #F5F5F7;
+  padding: 40px;
+  color: #1a1a1a;
+}
+h1 {
+  font-size: 13px; font-weight: 600; letter-spacing: 0.8px;
+  text-transform: uppercase; color: #888; margin-bottom: 32px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 760px;
+}
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.card-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.9px;
+  text-transform: uppercase; color: #aaa; margin-bottom: 14px;
+}
+.proj-name { font-size: 11px; color: #555; }
+.proj-pct  { font-size: 11px; font-weight: 600; color: #1a1a1a; }
+.proj-tok  { font-size: 9px; color: #aaa; }
+
+/* ── Option 1: Lollipop ── */
+.lollipop-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+.lollipop-row:last-child { margin-bottom: 0; }
+.lollipop-name { font-size: 11px; color: #555; width: 78px; flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lollipop-track { flex: 1; position: relative; height: 12px; display: flex; align-items: center; }
+.lollipop-line { height: 1.5px; background: #E0E0E0; flex: 1; }
+.lollipop-stem { height: 1.5px; background: currentColor; }
+.lollipop-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.lollipop-val  { font-size: 10px; font-weight: 600; color: #1a1a1a; width: 30px; text-align: right; }
+
+/* ── Option 3: Stacked bar ── */
+.stack-wrap {
+  height: 26px; border-radius: 6px; overflow: hidden;
+  display: flex; gap: 2px; background: #F0F0F0;
+  padding: 2px; border-radius: 8px;
+}
+.stack-seg { border-radius: 5px; height: 100%; transition: width 0.4s; }
+.stack-legend { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.stack-leg-row { display: flex; align-items: center; gap: 7px; }
+.stack-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stack-leg-name { font-size: 10px; color: #555; flex: 1; }
+.stack-leg-pct  { font-size: 10px; font-weight: 600; color: #1a1a1a; }
+
+/* ── Option 4: Dot grid ── */
+.dotgrid-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dotgrid-row:last-child { margin-bottom: 0; }
+.dotgrid-name { font-size: 11px; color: #555; width: 78px; flex-shrink: 0; }
+.dotgrid-dots { display: flex; gap: 3px; flex: 1; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.filled { opacity: 1; }
+.dot.empty  { background: #E8E8E8 !important; }
+.dotgrid-pct { font-size: 10px; font-weight: 600; color: #1a1a1a; width: 28px; text-align: right; }
+
+/* ── Option 5: Treemap ── */
+.treemap { display: flex; height: 72px; gap: 3px; border-radius: 8px; overflow: hidden; }
+.treemap-cell { border-radius: 6px; display: flex; align-items: flex-end;
+  padding: 6px; flex-direction: column; justify-content: flex-end; }
+.treemap-lbl  { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.treemap-pct  { font-size: 11px; font-weight: 700; color: #fff; }
+
+/* ── Option 6: Rings ── */
+.rings-wrap { display: flex; flex-direction: column; gap: 10px; }
+.ring-row { display: flex; align-items: center; gap: 12px; }
+.ring-svg  { flex-shrink: 0; }
+.ring-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.ring-name { font-size: 11px; color: #555; }
+.ring-stats { display: flex; align-items: baseline; gap: 5px; }
+.ring-pct  { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+.ring-tok  { font-size: 9px; color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1>Project Breakdown — Visualisation Options</h1>
+
+<div class="grid">
+
+  <!-- ── Option 1: Lollipop ── -->
+  <div class="card">
+    <div class="card-label">1 · Lollipop</div>
+
+    <div class="lollipop-row">
+      <span class="lollipop-name">claude-meter</span>
+      <div class="lollipop-track">
+        <div class="lollipop-stem" style="width:52%;color:#52BAFF"></div>
+        <div class="lollipop-dot"  style="background:#52BAFF"></div>
+        <div class="lollipop-line" style="width:48%"></div>
+      </div>
+      <span class="lollipop-val">52%</span>
+    </div>
+    <div class="lollipop-row">
+      <span class="lollipop-name">wallpaper-gen</span>
+      <div class="lollipop-track">
+        <div class="lollipop-stem" style="width:31%;color:#A87CF5"></div>
+        <div class="lollipop-dot"  style="background:#A87CF5"></div>
+        <div class="lollipop-line" style="width:69%"></div>
+      </div>
+      <span class="lollipop-val">31%</span>
+    </div>
+    <div class="lollipop-row">
+      <span class="lollipop-name">api-playground</span>
+      <div class="lollipop-track">
+        <div class="lollipop-stem" style="width:17%;color:#F26280"></div>
+        <div class="lollipop-dot"  style="background:#F26280"></div>
+        <div class="lollipop-line" style="width:83%"></div>
+      </div>
+      <span class="lollipop-val">17%</span>
+    </div>
+  </div>
+
+  <!-- ── Option 3: Stacked bar ── -->
+  <div class="card">
+    <div class="card-label">3 · Stacked Proportion</div>
+    <div class="stack-wrap">
+      <div class="stack-seg" style="width:52%;background:#52BAFF"></div>
+      <div class="stack-seg" style="width:31%;background:#A87CF5"></div>
+      <div class="stack-seg" style="width:17%;background:#F26280"></div>
+    </div>
+    <div class="stack-legend">
+      <div class="stack-leg-row">
+        <div class="stack-dot" style="background:#52BAFF"></div>
+        <span class="stack-leg-name">claude-meter</span>
+        <span class="stack-leg-pct">52%</span>
+      </div>
+      <div class="stack-leg-row">
+        <div class="stack-dot" style="background:#A87CF5"></div>
+        <span class="stack-leg-name">wallpaper-gen</span>
+        <span class="stack-leg-pct">31%</span>
+      </div>
+      <div class="stack-leg-row">
+        <div class="stack-dot" style="background:#F26280"></div>
+        <span class="stack-leg-name">api-playground</span>
+        <span class="stack-leg-pct">17%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Option 4: Dot grid ── -->
+  <div class="card">
+    <div class="card-label">4 · Dot Grid</div>
+
+    <div class="dotgrid-row">
+      <span class="dotgrid-name">claude-meter</span>
+      <div class="dotgrid-dots">
+        <div class="dot filled" style="background:#52BAFF"></div>
+        <div class="dot filled" style="background:#52BAFF"></div>
+        <div class="dot filled" style="background:#52BAFF"></div>
+        <div class="dot filled" style="background:#52BAFF"></div>
+        <div class="dot filled" style="background:#52BAFF"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+      </div>
+      <span class="dotgrid-pct">52%</span>
+    </div>
+    <div class="dotgrid-row" style="margin-bottom:10px">
+      <span class="dotgrid-name">wallpaper-gen</span>
+      <div class="dotgrid-dots">
+        <div class="dot filled" style="background:#A87CF5"></div>
+        <div class="dot filled" style="background:#A87CF5"></div>
+        <div class="dot filled" style="background:#A87CF5"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+      </div>
+      <span class="dotgrid-pct">31%</span>
+    </div>
+    <div class="dotgrid-row">
+      <span class="dotgrid-name">api-playground</span>
+      <div class="dotgrid-dots">
+        <div class="dot filled" style="background:#F26280"></div>
+        <div class="dot filled" style="background:#F26280"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+        <div class="dot empty"></div>
+      </div>
+      <span class="dotgrid-pct">17%</span>
+    </div>
+  </div>
+
+  <!-- ── Option 5: Treemap ── -->
+  <div class="card">
+    <div class="card-label">5 · Treemap</div>
+    <div class="treemap">
+      <div class="treemap-cell" style="flex:52;background:#52BAFF">
+        <span class="treemap-pct">52%</span>
+        <span class="treemap-lbl">claude-meter</span>
+      </div>
+      <div class="treemap-cell" style="flex:31;background:#A87CF5">
+        <span class="treemap-pct">31%</span>
+        <span class="treemap-lbl">wallpaper</span>
+      </div>
+      <div class="treemap-cell" style="flex:17;background:#F26280">
+        <span class="treemap-pct">17%</span>
+        <span class="treemap-lbl">api</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Option 6: Rings ── -->
+  <div class="card" style="grid-column: 1 / -1; max-width: 360px;">
+    <div class="card-label">6 · Progress Rings</div>
+    <div class="rings-wrap">
+
+      <div class="ring-row">
+        <svg class="ring-svg" width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#F0F0F0" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#52BAFF" stroke-width="4"
+            stroke-dasharray="45.8 88" stroke-dashoffset="22" stroke-linecap="round"
+            transform="rotate(-90 18 18)"/>
+        </svg>
+        <div class="ring-info">
+          <span class="ring-name">claude-meter</span>
+          <div class="ring-stats">
+            <span class="ring-pct" style="color:#52BAFF">52%</span>
+            <span class="ring-tok">4.2M tokens</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ring-row">
+        <svg class="ring-svg" width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#F0F0F0" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#A87CF5" stroke-width="4"
+            stroke-dasharray="27.3 88" stroke-dashoffset="22" stroke-linecap="round"
+            transform="rotate(-90 18 18)"/>
+        </svg>
+        <div class="ring-info">
+          <span class="ring-name">wallpaper-gen</span>
+          <div class="ring-stats">
+            <span class="ring-pct" style="color:#A87CF5">31%</span>
+            <span class="ring-tok">2.5M tokens</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ring-row">
+        <svg class="ring-svg" width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#F0F0F0" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#F26280" stroke-width="4"
+            stroke-dasharray="14.9 88" stroke-dashoffset="22" stroke-linecap="round"
+            transform="rotate(-90 18 18)"/>
+        </svg>
+        <div class="ring-info">
+          <span class="ring-name">api-playground</span>
+          <div class="ring-stats">
+            <span class="ring-pct" style="color:#F26280">17%</span>
+            <span class="ring-tok">1.4M tokens</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
