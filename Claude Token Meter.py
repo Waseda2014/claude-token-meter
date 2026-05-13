@@ -469,18 +469,9 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
 }
 #projBody.open { opacity: 1; }
 #projBody.shut { max-height: 0 !important; opacity: 0; padding-top: 0; }
-.proj-tabs {
-  display: inline-flex; gap: 2px; width: fit-content;
-  background: var(--pill); border-radius: 5px; padding: 2px;
-  margin-bottom: 10px;
+.proj-sublbl {
+  font-size: 7.5px; color: var(--t3); letter-spacing: 0.2px;
 }
-.proj-tab {
-  font-family: inherit; font-size: 8px; font-weight: 500;
-  color: var(--t3); background: none; border: none;
-  border-radius: 4px; padding: 2px 9px; cursor: pointer;
-  transition: all 0.15s; -webkit-appearance: none; letter-spacing: 0.2px;
-}
-.proj-tab.active { background: var(--pill-act-bg); color: var(--t1); }
 .proj-rows { display: flex; flex-direction: column; gap: 7px; }
 .proj-row  { display: flex; align-items: center; gap: 6px; }
 .proj-name {
@@ -540,10 +531,13 @@ html[data-vivid="on"] #gaugeSessionLbl { opacity: 0.88; }
   transform: translateX(-50%);
 }
 .heatmap-axis-lbl:first-child { transform: none; }
+.heatmap-noon-gap {
+  width: 4px; flex-shrink: 0; /* visual break between AM and PM cell groups */
+}
 
 /* Carbon mode — heatmap cells use amber tint */
 html[data-vivid="on"] .heatmap-cell {
-  background: rgba(255,184,0,0.06);
+  background: rgba(210,140,0,0.10);
 }
 
 /* ── Footer ── */
@@ -1568,7 +1562,10 @@ html[data-theme="light"] .cookie-cancel:hover {
   <div class="card proj-card" id="projectCard" style="display:none">
     <div class="shimmer-overlay" id="projShimmer"></div>
     <div class="proj-hdr" id="projHdr">
-      <span class="stat-lbl">PROJECT BREAKDOWN</span>
+      <div style="display:flex;flex-direction:column;gap:1px">
+        <span class="stat-lbl">PROJECT BREAKDOWN</span>
+        <span class="proj-sublbl">Last 7 days</span>
+      </div>
       <button class="eff-toggle" id="projToggle" title="Show / hide">
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
           <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1576,10 +1573,6 @@ html[data-theme="light"] .cookie-cancel:hover {
       </button>
     </div>
     <div id="projBody">
-      <div class="proj-tabs">
-        <button class="proj-tab active" id="projTabSess" data-mode="session">Session</button>
-        <button class="proj-tab"        id="projTabWeek" data-mode="week">This Week</button>
-      </div>
       <div class="proj-rows" id="projRows"></div>
       <div class="proj-empty" id="projEmpty">No project data yet</div>
     </div>
@@ -2442,7 +2435,7 @@ function renderWeekChart(daily7) {
 }
 
 // ── Project Breakdown ─────────────────────────────────────────────────────────
-window._projMode = 'session';
+window._projMode = 'week';
 
 function renderProjectBreakdown(d) {
   if (!d.projects) return;
@@ -2511,14 +2504,20 @@ function renderHeatmap(d) {
     cellsEl.className = 'heatmap-cells';
 
     row.forEach((val, hi) => {
+      // Insert a small visual divider between AM and PM halves
+      if (hi === 12) {
+        const gap = document.createElement('div');
+        gap.className = 'heatmap-noon-gap';
+        cellsEl.appendChild(gap);
+      }
       const cell = document.createElement('div');
       cell.className = 'heatmap-cell';
       if (val > 0) {
         const intensity = val / maxVal;
         const alpha = Math.max(0.12, Math.min(1.0, intensity * 0.88 + 0.12));
         if (vivid) {
-          // Carbon mode — warm amber
-          cell.style.background = `rgba(255,184,0,${(alpha * 0.9).toFixed(2)})`;
+          // Carbon mode — deep amber, boosted for light-mode contrast
+          cell.style.background = `rgba(210,140,0,${(alpha * 0.95 + 0.05).toFixed(2)})`;
         } else {
           // Default — blue→violet sweep across hours
           const t = hi / 23;
@@ -2539,14 +2538,16 @@ function renderHeatmap(d) {
     gridEl.appendChild(rowEl);
   });
 
-  // Hour-axis labels: 12A, 6A, 12P, 6P
+  // Hour-axis labels: 12am, 6am, 12pm, 6pm
   if (axisEl) {
     axisEl.innerHTML = '';
-    [{h:0,t:'12A'},{h:6,t:'6A'},{h:12,t:'12P'},{h:18,t:'6P'}].forEach(({h,t}) => {
+    [{h:0,t:'12am'},{h:6,t:'6am'},{h:12,t:'12pm'},{h:18,t:'6pm'}].forEach(({h,t}) => {
       const lbl = document.createElement('span');
       lbl.className   = 'heatmap-axis-lbl';
       lbl.textContent = t;
       lbl.style.left  = (h / 24 * 100) + '%';
+      // 12pm left-aligns with the noon gap instead of centering over it
+      if (h === 12) lbl.style.transform = 'none';
       axisEl.appendChild(lbl);
     });
   }
@@ -2866,6 +2867,16 @@ window._closeAllTips = function(except) {
   if (!expanded) { body.style.paddingTop = '0'; }
   toggle.classList.toggle('open', expanded);
 
+  // If already open from localStorage, tell the popover its real height right away.
+  // Without this, H_BASE doesn't include fullH and any later addModule delta
+  // is applied on top of the wrong baseline, clipping the bottom of this body.
+  if (expanded) {
+    const initH = H_BASE + fullH;
+    app.style.height = initH + 'px';
+    setTimeout(() =>
+      window.webkit.messageHandlers.cm.postMessage({action:'resize', h: initH}), 0);
+  }
+
   function doToggle() {
     expanded = !expanded;
     try { localStorage.setItem('effOpen', expanded ? '1' : '0'); } catch(e) {}
@@ -3062,18 +3073,6 @@ window._closeAllTips = function(except) {
     body.style.transition = '';
   };
 
-  // Tab switching: Session / Week
-  ['projTabSess', 'projTabWeek'].forEach(id => {
-    const tab = document.getElementById(id);
-    if (!tab) return;
-    tab.addEventListener('click', (e) => {
-      e.stopPropagation();
-      window._projMode = tab.dataset.mode;
-      document.querySelectorAll('.proj-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      if (window._d) renderProjectBreakdown(window._d);
-    });
-  });
 })();
 
 // ── Hourly Heatmap expand / collapse ──
@@ -3088,7 +3087,7 @@ window._closeAllTips = function(except) {
   try { expanded = localStorage.getItem('heatmapOpen') === '1'; } catch(e) {}
 
   // Heatmap grid renders dynamically; use a safe initial guess
-  const HEATMAP_EST = 106; // 10 + 68 grid + 4 gap + 13 axis + 11 rounding
+  const HEATMAP_EST = 114; // paddingTop:10 + grid(7×9 + 6×2):75 + axisMargin:4 + axis:13 + slack:12
   body.style.maxHeight = expanded ? HEATMAP_EST + 'px' : '0px';
   body.classList.add(expanded ? 'open' : 'shut');
   if (!expanded) body.style.paddingTop = '0';
@@ -3105,12 +3104,16 @@ window._closeAllTips = function(except) {
     try { localStorage.setItem('heatmapOpen', expanded ? '1' : '0'); } catch(e) {}
     if (expanded) {
       body.style.paddingTop = '';
-      const fullH = body.scrollHeight || HEATMAP_EST;
+      // scrollHeight is measured while 'shut' still has padding-top:0, so it
+      // under-reports by ~10px.  Use HEATMAP_EST as a safe floor to avoid clipping.
+      const fullH = Math.max(body.scrollHeight || 0, HEATMAP_EST);
       body.style.maxHeight = fullH + 'px';
       body.classList.remove('shut'); body.classList.add('open');
       const sh = document.getElementById('heatmapShimmer');
       if (sh) { sh.classList.remove('run'); void sh.offsetWidth; sh.classList.add('run'); }
       setTimeout(() => sendResize(getAppH() + fullH), 10);
+      // After transition finishes (280ms), snap to exact rendered height
+      setTimeout(() => { if (window._updateHeatmapH) window._updateHeatmapH(); }, 350);
     } else {
       const fullH = parseInt(body.style.maxHeight) || HEATMAP_EST;
       body.style.maxHeight = '0px';
